@@ -140,7 +140,7 @@
     },
     {
       "file": "package.json",
-      "sha256": "c08044981ced419004b095b44858617fdb122efb58550596337c3d1fa1075130"
+      "sha256": "5e17998fa9996b78bf25381f02fcb0a234f3cbd0773966973621ec991f8f2ac8"
     },
     {
       "file": "pc/adb-client.mjs",
@@ -389,6 +389,10 @@
     {
       "file": "scripts/test-proximity-lease.ps1",
       "sha256": "4d392e96e30b9dc03612532189105fc283915b5c8761485345189d4c359115f6"
+    },
+    {
+      "file": "scripts/test.mjs",
+      "sha256": "5c0da611a38c12c8d5db78aba098b73ac189e18f61df4259f73e56247eea3407"
     },
     {
       "file": "third_party/README.md",

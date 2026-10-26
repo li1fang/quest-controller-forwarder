@@ -13,7 +13,7 @@
     "receive": "node pc/receiver.mjs",
     "lan": "node pc/start-lan.mjs",
     "annotate": "node pc/annotation-server.mjs",
-    "test": "node --test pc/*.test.mjs"
+    "test": "node scripts/test.mjs"
   },
   "engines": {
     "node": ">=20"
