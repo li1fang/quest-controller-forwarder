@@ -9,19 +9,22 @@ import { createTelemetryHub, createViewerServer } from './viewer-server.mjs';
 import { openLocalBrowser } from './launch-options.mjs';
 import { isPrivateIPv4 } from './prepare-lan.mjs';
 import { createHeadlessValidation } from './headless-validation.mjs';
+import { readPairing } from './lan-pairing.mjs';
+import { createStorageGuard } from './storage-status.mjs';
 
 const project = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 export async function startLan(options = {}) {
   const configPath = path.resolve(options.config ?? path.join(project, '.local/lan/receiver.json'));
-  const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+  const config = readPairing(configPath);
   if (!isPrivateIPv4(config.host) || !Object.values(os.networkInterfaces()).flat().some(nic => nic?.address === config.host))
-    throw new Error('Configured LAN IPv4 is not assigned to this PC; regenerate pairing for the current IP and reinstall LAN APK');
+    throw new Error('Configured LAN IPv4 is not assigned to this PC; update pairing with prepare-lan.ps1 and import it on the headset (no APK rebuild)');
   const cert = fs.readFileSync(path.join(path.dirname(configPath), 'server-cert.pem'));
-  if (new X509Certificate(cert).fingerprint256.replaceAll(':', '').toLowerCase() !== config.cert_sha256) throw new Error('LAN certificate does not match paired APK');
+  if (new X509Certificate(cert).fingerprint256.replaceAll(':', '').toLowerCase() !== config.cert_sha256) throw new Error('LAN certificate does not match receiver pairing');
   const hub = createTelemetryHub({ source: { mode: 'live', transport: 'lan', endpoint: `${config.host}:${config.port}` } });
-  let ui, receiver, captures, validation, timer, closing;
+  let ui, receiver, captures, validation, storage, timer, closing;
   const close = (reason = 'user_stop') => closing ??= (async () => {
     clearTimeout(timer);
+    await storage?.close();
     await validation?.close();
     await receiver?.close();
     const result = await captures?.shutdown(reason);
@@ -43,15 +46,18 @@ export async function startLan(options = {}) {
         try {
           const directory = path.join(root, name), manifest = JSON.parse(fs.readFileSync(path.join(directory, 'manifest.json')));
           if (manifest.schema === 'quest-capture-session-v1' && ['complete', 'failed'].includes(manifest.state)) {
-            initialRecording = { state: manifest.state, session_id: manifest.session_id, directory, ...manifest.statistics, error: manifest.error }; break;
+            initialRecording = { state: manifest.state, session_id: manifest.session_id, directory, ...manifest.statistics, error: manifest.error,
+              started_at_utc: manifest.started_at_utc, elapsed_s: manifest.elapsed_s ?? (Date.parse(manifest.ended_at_utc) - Date.parse(manifest.started_at_utc)) / 1000, stop_reason: manifest.stop_reason }; break;
           }
         } catch { /* An incomplete directory is not a completed recording. */ }
       }
     }
-    captures = createLanCaptureController({ hub, root, initialRecording, log: console.error,
+    captures = createLanCaptureController({ hub, root, initialRecording, log: console.error, beforeStart: () => storage.beforeStart(),
       source: { transport: 'app-lan-tls', endpoint: `${config.host}:${config.port}`, app_package: 'dev.quest.lanforwarder',
         worn_state: 'not_measured; validate separately', power_policy: 'prox-lease-v1 for opted-in app; device effect requires validation', server_cert_sha256: config.cert_sha256 } });
     validation = createHeadlessValidation({ captures, onUpdate: hub.validation, profile: options.validationProfile ?? 'motion_only' });
+    storage = createStorageGuard({ root, onStatus: hub.storage, isRecording: () => captures.status().state === 'recording',
+      stop: reason => validation.active() ? validation.finish(reason) : captures.stop(reason) });
     ui = await createViewerServer({ hub, port: options.uiPort ?? 8787, onStop: () => close(),
       onStartCapture: () => { if (validation.active()) throw new Error('Validation is active'); validation.reset(); return captures.start(); },
       onStopCapture: () => validation.active() ? validation.finish() : captures.stop(), onStartValidation: conditions => validation.start(conditions) });
@@ -63,11 +69,11 @@ export async function startLan(options = {}) {
     if (!options.idle) await captures.start();
     console.error(`LAN TLS receiver: ${config.host}:${receiver.port} (manual app launch; no ADB)`);
     if (options.idle) console.error('Preview only; click Start new capture to record.');
-    console.error(`Local viewer: ${ui.url}`);
+    console.error(`Daily capture (no default time limit): ${ui.url}/capture`);
     const stop = () => { close().catch(error => { console.error(error.message); process.exitCode = 1; }); };
     process.once('SIGINT', stop); process.once('SIGTERM', stop);
     if (options.duration) timer = setTimeout(() => close('duration_elapsed').catch(console.error), options.duration * 1000);
-    if (options.open !== false) await openLocalBrowser(ui.url);
+    if (options.open !== false) await openLocalBrowser(ui.url + '/capture');
     return { hub, ui, receiver, captures, close };
   } catch (error) { await close('startup_error'); throw error; }
 }

@@ -28,7 +28,7 @@
     },
     {
       "file": "CHANGELOG.md",
-      "sha256": "fa9f6f31b8fe38fb100d256e10356ede268c0cec09966140af593b487ddd1462"
+      "sha256": "3f28a8ac3e30bfc47a0beaf7c772bf0f28a50e7a49af1b7436ba874cf5fd2c46"
     },
     {
       "file": "CMakeLists.txt",
@@ -47,8 +47,16 @@
       "sha256": "359cb89df78144eb82b6bd779751c2a5fa7c8a333f56a95516e51564f041ffe4"
     },
     {
+      "file": "Pair-Quest-LAN.cmd",
+      "sha256": "8782a7f775c9d19a70484158caa235051fbfbfde98032de4e202cfdb173cc5b4"
+    },
+    {
       "file": "README.md",
-      "sha256": "19d17d44762a2978342bf9b23efa4dbb11fc5780eeafe34eeb49d35eb0916857"
+      "sha256": "c1acd949e0e38836a070a2fc4b828a05ed4e9c67bf42cc85ea9ea63059f998f5"
+    },
+    {
+      "file": "Record-Quest.cmd",
+      "sha256": "2067e480073cda5132da8b9ea0896e265387a090b0a51c9d059aae1b67f1b2cf"
     },
     {
       "file": "Restore-Quest-Dialogs.cmd",
@@ -56,7 +64,7 @@
     },
     {
       "file": "SECURITY.md",
-      "sha256": "bafefe713883d245a2c1a4c1859eb3f55f3ed67414376f1641d4be016d01d4e6"
+      "sha256": "89a54a7360a9e0f567a8af49a80f387734bcd00de911c3bec9a1fb1d2f4a7c99"
     },
     {
       "file": "Start-Quest-LAN-Preview.cmd",
@@ -88,11 +96,23 @@
     },
     {
       "file": "app/AndroidManifest.xml",
-      "sha256": "eaa4ef73339c7e012d3940b53c965c95783ec9af23c013f029f139553b64780c"
+      "sha256": "c36b25ff9aafe131800fb20ec511875706238351d27d2039eafece9f5b2a331c"
+    },
+    {
+      "file": "app/java/dev/quest/usbforwarder/LanPairing.java",
+      "sha256": "2bd5aeedea6921f5a1eb3b9dd6e00cc8da4afb4a7cf04b14d4cb76e083d2347c"
     },
     {
       "file": "app/java/dev/quest/usbforwarder/LanTransport.java",
-      "sha256": "b39bb6431dfefc2b6426f3c26c485e789f26664b4f92b90e1abea264fc8f7ec7"
+      "sha256": "439f7b39e59154f1a0ca2d69012cb23a02b83145378808ce2704f0933188ad0c"
+    },
+    {
+      "file": "app/java/dev/quest/usbforwarder/PairingActivity.java",
+      "sha256": "3612c30a9252d2622ca4be1879668ad2c0c52eb28a5336fe548332f94d76f5d2"
+    },
+    {
+      "file": "app/java/dev/quest/usbforwarder/PairingStore.java",
+      "sha256": "9b3d39518dee112ed9c819f48e36ff6f691865235893b139dfeb69e6157400f5"
     },
     {
       "file": "app/java/dev/quest/usbforwarder/ProximityControl.java",
@@ -111,6 +131,10 @@
       "sha256": "4b42e5757f9e4e330f2d50a7eabcd2b40996a4129bc00804c8d575fbf3417dba"
     },
     {
+      "file": "diagnostics/LanPairingTest.java",
+      "sha256": "b37e4490aaa963b98011098444dc85e6b8678b5d3a79db1418ad165daeaae6ed"
+    },
+    {
       "file": "diagnostics/LanTlsProbe.java",
       "sha256": "ab4403e4e6563f84354a65a2f1e01df5fdd5dfd0ac5422ecb4a9611d4d9c1bfc"
     },
@@ -120,27 +144,35 @@
     },
     {
       "file": "docs/annotation-use.md",
-      "sha256": "201e4d5b92529ef45b023ec3571cfaf32f35586e0b04a5fdae20f207e7ca6c09"
+      "sha256": "3ac0e36c41683dea09599f4ba0e8205216cada5d971d547ad2e76a1d61ea2c83"
     },
     {
       "file": "docs/build.md",
-      "sha256": "068390925fe937e85cf8f52ee003706a800a5ac9f07f7665e8f9637433ca871d"
+      "sha256": "5c25496b7aada55d0359941ec4c3f39232782f84ef3b99143cce2e0bf5e467fb"
     },
     {
       "file": "docs/daily-use.md",
-      "sha256": "fe92f4776002cf31c662991073b7e74eaa6ab3c190e083c94a2009e20452f43a"
+      "sha256": "12aa43997f351d1e50027b76b32ededa9f2c092d0cff84fdf6206444f2b0012a"
+    },
+    {
+      "file": "docs/interface.md",
+      "sha256": "5b6f8056dd73aec19a4024de1bf105dc94f060962ee038ec3821d56d98d04bf0"
     },
     {
       "file": "docs/protocol.md",
-      "sha256": "f1475c8ef6f0d07e6bc068ed66ed3cdd1124d659b0e0f4d70968e72b571dc47d"
+      "sha256": "9cc79fac126e160e7a0d88207e583d850797b4619aca0bb174c6198f115b229b"
+    },
+    {
+      "file": "docs/runtime-pairing.md",
+      "sha256": "9d01698b1fef89a16ae711edb73d915e5146bcb54a50b4e6d52c86c1513fec24"
     },
     {
       "file": "docs/validation.md",
-      "sha256": "a27420fabafbaf1e9863c7a8312ebacfb979fea288ec300a38cb76c2cc8373d4"
+      "sha256": "4bb6f19fecad1b26b6b27a89903f070b6a83873026e58f859ce6e40ef6a22ee5"
     },
     {
       "file": "package.json",
-      "sha256": "5e17998fa9996b78bf25381f02fcb0a234f3cbd0773966973621ec991f8f2ac8"
+      "sha256": "d396285717c17500a022b93385d589030d50503f69c3c2a95683b9218ca7dcb7"
     },
     {
       "file": "pc/adb-client.mjs",
@@ -152,23 +184,27 @@
     },
     {
       "file": "pc/annotate-session.mjs",
-      "sha256": "86f8f40004dc8c8dbc2cf8ada934bf7eeea84d0d7fbd27f305bedc1e9df6ff99"
+      "sha256": "2a3439bfe71a8f93d21226b2059ef633c8930580ec13e68911971bc0490b848b"
+    },
+    {
+      "file": "pc/annotation-index.mjs",
+      "sha256": "e42fe29babbb6bcbdcc7d8a22c1d86d0dac6b55a85dd8ed21bbc78c68d09c3ea"
     },
     {
       "file": "pc/annotation-server.mjs",
-      "sha256": "fb3dad9946a90f2caadd12d5d7409bbe2a11033d58ec5873cd701a6d7761eb5b"
+      "sha256": "e6cb0be31a906d355eea2658923c0aa59c3fa46b8d4c7117ff2997b8070d3ff4"
     },
     {
       "file": "pc/annotation-session.mjs",
-      "sha256": "0adc732463f57183fc05b8daff9674dfd8c54f1a0662c31705a9f601a8319168"
+      "sha256": "65508a16c1ae113388c7136b3a36cb79c411ba7760508088c51782229d7d15fd"
     },
     {
       "file": "pc/annotation.test.mjs",
-      "sha256": "75bce9d433cc418bc8b49272555648bc64465e21c37f707ab46ad9ab2c6b2bc4"
+      "sha256": "e5c46f4e2827333410a070e77344f57feb5ef26ed365c67ce9f695f43553f90e"
     },
     {
       "file": "pc/capture-session.mjs",
-      "sha256": "fc07ca52a535bb17921a8f7ffbb775447a455fa46f60644d999d03e016bc2660"
+      "sha256": "0cd3cd5b07752865c66639671aa3e9215901bc73d95fe4f19258e3a3476620ad"
     },
     {
       "file": "pc/headless-validation.mjs",
@@ -188,11 +224,19 @@
     },
     {
       "file": "pc/lan-capture-controller.mjs",
-      "sha256": "28e73b170e4695e09ec8983082b81e159ee50ab20054f47055f0925ce367d4c5"
+      "sha256": "3179288812faf1c64b03cec3319b840f306d925b26fb0bb714e8bc242253f110"
     },
     {
       "file": "pc/lan-capture.test.mjs",
-      "sha256": "2527a37dca24b5a8f74c7c1181b272381feed008cfa0ce3839d581540978d699"
+      "sha256": "5a2381b93454dee6787048767c9f03df4f2239d195fd4a8ea6e6d5ee3078ad5f"
+    },
+    {
+      "file": "pc/lan-pairing.mjs",
+      "sha256": "dbc32134922c368e7bb1f558e303772ee604cb4f561fe12b1614bf16405c4990"
+    },
+    {
+      "file": "pc/lan-pairing.test.mjs",
+      "sha256": "2badf1c923ef81b41384408baef3036b7dbae22972aef90923c54b7ca8843c63"
     },
     {
       "file": "pc/lan-receiver.mjs",
@@ -207,8 +251,16 @@
       "sha256": "25d2237739017bbd2816dde65b64c953f3c15d270b2ea09e768a53dd66f0742c"
     },
     {
+      "file": "pc/long-capture.test.mjs",
+      "sha256": "95c293f282842b41a9db362220ab43e47284137d5d635d4e74e9f08fb1ad2620"
+    },
+    {
+      "file": "pc/pair-lan.mjs",
+      "sha256": "ac1092735cc651a24c990d821e460cff7670db9d6394e081083e2c0b1c2c44c9"
+    },
+    {
       "file": "pc/prepare-lan.mjs",
-      "sha256": "8797af50834b75afa2004dfebc5b174419616579e9cc042823ce6a2d7f61f9eb"
+      "sha256": "c759a922c4605a90ea45d24919c4d4538b1ec4a0142887f1d8615a9273cf0411"
     },
     {
       "file": "pc/probe-lan.mjs",
@@ -232,7 +284,7 @@
     },
     {
       "file": "pc/start-lan.mjs",
-      "sha256": "a99d2d04308c26260db9a406337b62d62b194a3db69155244ea378c2ad05b396"
+      "sha256": "7e2e700a56fa05eff89a4256f5e0a49ce9ce5bc41b17b001c2b85217c771c198"
     },
     {
       "file": "pc/start.mjs",
@@ -247,12 +299,16 @@
       "sha256": "50306d565b39c25a03b3fcf707877214e3e0b79dd99a0f0295cb57abff24bd84"
     },
     {
+      "file": "pc/storage-status.mjs",
+      "sha256": "efc3fda35c9dedce6ceb5927cd1f857adb5b731ffa389ac6c4e412d8a3cd1aa9"
+    },
+    {
       "file": "pc/usb.mjs",
       "sha256": "45919b5bae96706ad9725bf0b34ac02b386e6a1218cbc1530758847a2c7a68a2"
     },
     {
       "file": "pc/viewer-server.mjs",
-      "sha256": "3016025b2911c987b9deb466fdbe7104044f0d69990cff8535e960ed712fab80"
+      "sha256": "7533891dfd3cbcd98b6598c5e7575743102e243f507556cbccb787eea9c10070"
     },
     {
       "file": "pc/viewer.mjs",
@@ -260,7 +316,7 @@
     },
     {
       "file": "pc/viewer.test.mjs",
-      "sha256": "970ba4ca10a218c2b0a66c5f262e232e43840f785771b75d7225eb725112eca2"
+      "sha256": "7ae0bd06570cbd98bcaee4ec01803a5ac131155c46898c375e0ba2ffc3ce2fae"
     },
     {
       "file": "pc/wireless-experiments.mjs",
@@ -291,12 +347,16 @@
       "sha256": "916513e26c6d901bb21e30bdfa217d6beb6e90d371d85acc9d5e6b482f3f72c5"
     },
     {
+      "file": "scripts/benchmark-annotation.mjs",
+      "sha256": "fd4ce9521e3ae459a7ab04b10fbba3e76b67dd689c7b0eec4667e70597c4cc52"
+    },
+    {
       "file": "scripts/build-lan-probe.ps1",
       "sha256": "4bc81337f8b83297eb6ada040bb412dbe69867c023de3279b9697925856a1a7c"
     },
     {
       "file": "scripts/build.ps1",
-      "sha256": "9ef642efe89c6381dbe7c9cbf65dd261043483deca36d1a0310985b8d269f8f9"
+      "sha256": "305731274b7a10ca568bb8bfd89c476e14e4f1a9493a79bce1c0874631a7ad38"
     },
     {
       "file": "scripts/dialog-mode.ps1",
@@ -320,7 +380,7 @@
     },
     {
       "file": "scripts/export-public.mjs",
-      "sha256": "75b7006bd0da5fee87ec594d969176be6f0f3cfbbfc4bb17a9a44d3232d71489"
+      "sha256": "546d4c6cc62e81406e8ebf497774aed0f87a9c469e08f67dc70d56fac9f3791c"
     },
     {
       "file": "scripts/forget-pin.ps1",
@@ -335,6 +395,10 @@
       "sha256": "03b333a2fb7e36819b42387f77faca34fef050de07985a9fade9af95a74ed21c"
     },
     {
+      "file": "scripts/pair-lan.ps1",
+      "sha256": "4c8cbad61b5ecc6512d5fa3396f256abdcf4cec58791426c6e29eeb7084c3fc9"
+    },
+    {
       "file": "scripts/pin-store.ps1",
       "sha256": "4a4e2e255e472aab3eab628318df0310248dd1afcc4cacf4c6f0c36b54009c8f"
     },
@@ -344,7 +408,7 @@
     },
     {
       "file": "scripts/prepare-lan.ps1",
-      "sha256": "95438d080d90f13e8aa5e9c110a7c9af2184da324a613979c4c44007f740dfe7"
+      "sha256": "de30c1ec023d721281630a6a7cf6e60cec22f003d01311cea2e1876c92416950"
     },
     {
       "file": "scripts/probe-adb-parser.ps1",
@@ -387,6 +451,14 @@
       "sha256": "cb9777d2c6f9bed27ab19f6d5d9f0d327927297dc35625575965350756a662dc"
     },
     {
+      "file": "scripts/test-lan-manifest.ps1",
+      "sha256": "0f5bc62cecfe3258a6cbd415fbce5c7fcf0b334c69341b4cfd7a4c318e10ca15"
+    },
+    {
+      "file": "scripts/test-lan-pairing.ps1",
+      "sha256": "9149912498787b30a5e7a4f2be968a502351e63653bb1e6890b77b93f326068d"
+    },
+    {
       "file": "scripts/test-proximity-lease.ps1",
       "sha256": "4d392e96e30b9dc03612532189105fc283915b5c8761485345189d4c359115f6"
     },
@@ -416,7 +488,7 @@
     },
     {
       "file": "web/annotate.html",
-      "sha256": "5e3900128a1203f7058f1db2380fd931d3934d54ae97eab6169764eaee1e1e08"
+      "sha256": "dcfb7d6bab9d5ac214158fca1b1e80f3f718fd416b0474e3faf71f11681e4269"
     },
     {
       "file": "web/annotation-state.js",
@@ -432,11 +504,11 @@
     },
     {
       "file": "web/app.js",
-      "sha256": "ab5c21efb971a9a9d9440aadf918ba74403b688843e76a2794f3b5ea9ad6938e"
+      "sha256": "13d703de9f56c34eb72e4abb12ec70ff8aabcb171995870de1fcaae6cce59ec5"
     },
     {
       "file": "web/index.html",
-      "sha256": "0f942640a05753ef9067c9fe592709c14c7a9f2a4680c54d8ddf541f2c68eb2b"
+      "sha256": "f28b26b115faed60517c9b0e6ee9222d8c39299d3a3aa208a0691f7c595f81fc"
     },
     {
       "file": "web/scene.js",
@@ -444,11 +516,15 @@
     },
     {
       "file": "web/state.js",
-      "sha256": "41b15a3f4a9ba3f4b1da58ce1ea17af5fa59cebe63157f3202b1af864219f5ac"
+      "sha256": "fa3f21ef999c656e57c0716cf5e1b5ee1b8a8274bdc55dac9918d9033f316871"
     },
     {
       "file": "web/style.css",
-      "sha256": "e9db5647ad5e01885b360efa260b7c7850f7e22c33062156aefe5f02e2ad1c08"
+      "sha256": "11ed0eebdf96066e4d6dc60db2e0e5138fc9bf6a6d1b9a9f6c540f8afe115fa3"
+    },
+    {
+      "file": "web/workbench.css",
+      "sha256": "93876ab5fd05708430835d279a09646197e91485de239b4724730d1288103abc"
     }
   ]
 }

@@ -15,12 +15,15 @@ import javax.net.ssl.*;
 
 /** TLS writer plus bounded receiver controls. No persistent settings, ADB or PIN operations. */
 public final class LanTransport {
+    private static volatile LanTransport live;
+    private Activity runtimeActivity;
     private boolean enabled;
-    private JSONObject config;
+    private LanPairing config;
     private String configError;
     private String phase = "configuration";
     private final String runId = UUID.randomUUID().toString();
     private volatile SSLSocket socket;
+    private volatile boolean authenticated;
     private OutputStream output;
     private ProximityControl proximity;
     private final Object controlLock = new Object();
@@ -28,8 +31,15 @@ public final class LanTransport {
         Thread t = new Thread(r, "quest-lan-timeout"); t.setDaemon(true); return t;
     });
     public LanTransport(Activity activity) {
-        try { load(activity.getAssets().open("lan-config.json")); proximity = new ProximityControl(activity); }
-        catch (FileNotFoundException absent) { enabled = false; }
+        try {
+            if (PairingStore.runtimeEnabled(activity)) { enabled = true; runtimeActivity = activity; config = PairingStore.load(activity); live = this; }
+            else load(activity.getAssets().open("lan-config.json")); // Diagnostic/legacy variants only.
+            proximity = new ProximityControl(activity);
+        }
+        catch (FileNotFoundException absent) {
+            enabled = PairingStore.runtimeEnabled(activity);
+            if (enabled) configError = "Open Quest LAN pairing before capture";
+        }
         catch (Exception error) { enabled = true; configError = "LAN configuration invalid"; }
     }
     // Package-private entry for the separate diagnostic DEX; no test producer is packaged in the APK.
@@ -38,23 +48,18 @@ public final class LanTransport {
     }
     private void load(InputStream source) throws Exception {
         enabled = true;
-        try (InputStream input = source) {
-            ByteArrayOutputStream bytes = new ByteArrayOutputStream();
-            byte[] buffer = new byte[1024]; int count;
-            while ((count = input.read(buffer)) != -1) {
-                bytes.write(buffer, 0, count);
-                if (bytes.size() > 16384) throw new IOException("Oversized LAN configuration");
-            }
-            config = new JSONObject(bytes.toString("UTF-8"));
-            if (config.getInt("version") != 1 || !config.getString("token").matches("[a-f0-9]{64}") ||
-                !config.getString("cert_sha256").matches("[a-f0-9]{64}") || config.getInt("port") < 1 || config.getInt("port") > 65535)
-                throw new IOException("Invalid LAN configuration");
-        }
+        config = PairingStore.read(source);
     }
     public boolean isConfigured() { return enabled; }
+    public static boolean isConnected() {
+        LanTransport transport = live;
+        return transport != null && transport.authenticated;
+    }
     public String getPhase() { return phase; }
     private void connect() throws Exception {
-        final String expected = config.getString("cert_sha256");
+        // Re-read private configuration on reconnect, so endpoint changes need no process or APK rebuild.
+        if (runtimeActivity != null) config = PairingStore.load(runtimeActivity);
+        final String expected = config.certSha256;
         X509TrustManager pinned = new X509TrustManager() {
             public X509Certificate[] getAcceptedIssuers() { return new X509Certificate[0]; }
             public void checkClientTrusted(X509Certificate[] chain, String auth) throws CertificateException { throw new CertificateException("Client role only"); }
@@ -79,14 +84,14 @@ public final class LanTransport {
         next.setEnabledProtocols(new String[]{"TLSv1.3", "TLSv1.2"});
         next.setTcpNoDelay(true); next.setSoTimeout(2000);
         phase = "tcp_connect";
-        next.connect(new InetSocketAddress(config.getString("host"), config.getInt("port")), 2000);
+        next.connect(new InetSocketAddress(config.host, config.port), 2000);
         phase = "tls_handshake";
         next.startHandshake();
         phase = "receiver_auth";
         output = next.getOutputStream();
         JSONObject hello = new JSONObject().put("protocol", "quest-lan-v1").put("kind", "hello")
-            .put("token", config.getString("token")).put("app_run_id", runId)
-            .put("device_model", Build.MODEL).put("sdk_int", Build.VERSION.SDK_INT).put("app_version", "0.7.0")
+            .put("token", config.token).put("app_run_id", runId)
+            .put("device_model", Build.MODEL).put("sdk_int", Build.VERSION.SDK_INT).put("app_version", "0.8.1")
             .put("power_control", proximity == null ? JSONObject.NULL : "prox-lease-v1");
         output.write((hello.toString() + "\n").getBytes(StandardCharsets.UTF_8)); output.flush();
         ByteArrayOutputStream response = new ByteArrayOutputStream();
@@ -96,11 +101,12 @@ public final class LanTransport {
             response.write(value);
         }
         if (!new JSONObject(response.toString("UTF-8")).optBoolean("accepted")) throw new IOException("Pairing rejected");
+        synchronized (controlLock) {
+            if (socket != next) throw new IOException("Connection closed during acceptance");
+            authenticated = true;
+            if (proximity != null) proximity.newConnection();
+        }
         if (proximity != null) {
-            synchronized (controlLock) {
-                if (socket != next) throw new IOException("Connection closed during acceptance");
-                proximity.newConnection();
-            }
             Thread reader = new Thread(() -> readControls(next), "quest-lan-control"); reader.setDaemon(true); reader.start();
         }
         Log.i("QuestLAN", "Connected to paired LAN receiver using " + next.getSession().getProtocol());
@@ -130,7 +136,7 @@ public final class LanTransport {
         SSLSocket previous;
         synchronized (controlLock) {
             if (expected != null && socket != expected) return;
-            previous = socket; socket = null;
+            previous = socket; socket = null; authenticated = false;
             if (proximity != null) proximity.disconnected();
         }
         if (previous != null) try { previous.close(); } catch (IOException ignored) {}
@@ -150,5 +156,5 @@ public final class LanTransport {
         } catch (Exception ignored) { /* Never log control payloads or pairing data. */ }
         finally { disconnect(peer); }
     }
-    public void close() { disconnect(); if (proximity != null) proximity.close(); watchdog.shutdownNow(); }
+    public void close() { disconnect(); if (live == this) live = null; if (proximity != null) proximity.close(); watchdog.shutdownNow(); }
 }

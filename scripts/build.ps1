@@ -1,4 +1,4 @@
-param([string]$Sdk = 'C:\Android\Sdk', [string]$Jdk = 'C:\Android\jdk-21', [string]$LanConfig)
+param([string]$Sdk = 'C:\Android\Sdk', [string]$Jdk = 'C:\Android\jdk-21', [switch]$Lan)
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 $project = Split-Path $PSScriptRoot -Parent
@@ -42,10 +42,40 @@ $unsigned = Join-Path $build 'quest-usb-unsigned.apk'
 $aligned = Join-Path $build 'quest-usb-aligned.apk'
 $apk = Join-Path $dist 'quest-usb-forwarder.apk'
 $manifest = "$project\app\AndroidManifest.xml"
-if ($LanConfig) {
-    if (!(Test-Path -LiteralPath $LanConfig)) { throw 'LAN configuration missing. Run prepare-lan.ps1 first.' }
+if ($Lan) {
     $manifest = Join-Path $build 'AndroidManifest-lan.xml'
-    (Get-Content -LiteralPath "$project\app\AndroidManifest.xml" -Raw).Replace('dev.quest.usbforwarder','dev.quest.lanforwarder').Replace('Quest USB Forwarder','Quest LAN Forwarder') | Set-Content -LiteralPath $manifest -Encoding UTF8
+    [xml]$lanManifest = (Get-Content -LiteralPath "$project\app\AndroidManifest.xml" -Raw).Replace('package="dev.quest.usbforwarder"','package="dev.quest.lanforwarder"').Replace('Quest USB Forwarder','Quest LAN Forwarder')
+    $androidNamespace = 'http://schemas.android.com/apk/res/android'
+    $nativeActivity = $lanManifest.manifest.application.activity
+    $nativeActivity.SetAttribute('exported', $androidNamespace, 'false') | Out-Null
+    $nativeActivity.SetAttribute('resizeableActivity', $androidNamespace, 'false') | Out-Null
+    $nativeActivity.SetAttribute('taskAffinity', $androidNamespace, 'dev.quest.lanforwarder.capture') | Out-Null
+    # Keep VR classification in the manifest; capture remains private to this app.
+    foreach ($category in @($nativeActivity.'intent-filter'.category)) {
+        if ($category.GetAttribute('name', $androidNamespace) -eq 'android.intent.category.LAUNCHER') {
+            $nativeActivity.'intent-filter'.RemoveChild($category) | Out-Null
+        }
+    }
+    $defaultCategory = $lanManifest.CreateElement('category')
+    $defaultCategory.SetAttribute('name', $androidNamespace, 'android.intent.category.DEFAULT') | Out-Null
+    $nativeActivity.'intent-filter'.AppendChild($defaultCategory) | Out-Null
+    [xml]$hybrid = '<metavr:uses-metavr-sdk xmlns:metavr="http://schemas.meta.com/metavr-sdk" metavr:minSdkVersion="69" metavr:targetSdkVersion="69" />'
+    $lanManifest.manifest.InsertBefore($lanManifest.ImportNode($hybrid.DocumentElement, $true), $lanManifest.manifest.application) | Out-Null
+    $setupXml = @'
+<application xmlns:android="http://schemas.android.com/apk/res/android">
+  <meta-data android:name="dev.quest.forwarder.runtime_pairing" android:value="true" />
+  <activity android:name="dev.quest.usbforwarder.PairingActivity" android:exported="true" android:excludeFromRecents="true" android:screenOrientation="landscape" android:taskAffinity="dev.quest.lanforwarder.pairing" android:theme="@android:style/Theme.Material.Light.NoActionBar">
+    <intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /><category android:name="com.oculus.intent.category.2D" /><category android:name="android.intent.category.DEFAULT" /></intent-filter>
+  </activity>
+  <activity-alias android:name="dev.quest.lanforwarder.PairingSettings" android:targetActivity="dev.quest.usbforwarder.PairingActivity" android:exported="true" android:label="Quest LAN Pairing">
+    <intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /><category android:name="com.oculus.intent.category.2D" /></intent-filter>
+  </activity-alias>
+</application>
+'@
+    [xml]$setup = $setupXml
+    foreach ($child in $setup.application.ChildNodes) { $lanManifest.manifest.application.AppendChild($lanManifest.ImportNode($child, $true)) | Out-Null }
+    $lanManifest.Save($manifest)
+    & "$PSScriptRoot\test-lan-manifest.ps1" -Manifest $manifest
     $apk = Join-Path $dist 'quest-lan-forwarder.apk'
 }
 Run "$tools\aapt2.exe" @('link','--manifest',$manifest,'-I',"$Sdk\platforms\android-34\android.jar",'-o',$unsigned)
@@ -64,11 +94,7 @@ Push-Location $packageRoot
 try {
     Run "$Jdk\bin\jar.exe" @('uf',$unsigned,'classes.dex','lib/arm64-v8a/libquest_forwarder.so','lib/arm64-v8a/libopenxr_loader.so')
     Run "$Jdk\bin\jar.exe" @('uf',$unsigned,'META-INF/LICENSE.quest.txt','META-INF/THIRD_PARTY_NOTICES.md','META-INF/licenses')
-    if ($LanConfig) {
-        New-Item -ItemType Directory -Force -Path (Join-Path $packageRoot 'assets') | Out-Null
-        Copy-Item -LiteralPath $LanConfig -Destination (Join-Path $packageRoot 'assets\lan-config.json') -Force
-        Run "$Jdk\bin\jar.exe" @('uf',$unsigned,'assets/lan-config.json')
-    }
+    # Universal APK: pairing files, addresses, tokens and certificates are never packaged.
 }
 finally { Pop-Location }
 Run "$tools\zipalign.exe" @('-f','-p','4',$unsigned,$aligned)

@@ -5,7 +5,21 @@ import http from 'node:http';
 import { once } from 'node:events';
 import { createReceiver } from './receiver.mjs';
 import { createTelemetryHub, createViewerServer } from './viewer-server.mjs';
-import { deriveView } from '../web/state.js';
+import { deriveView, recordingPresentation } from '../web/state.js';
+
+test('recording feedback separates disk completion, tracking, disconnects and shutdown', () => {
+  assert.equal(recordingPresentation({ state: 'recording' }).state, 'recording');
+  assert.equal(recordingPresentation({ state: 'stopping' }).state, 'stopping');
+  assert.equal(recordingPresentation({ state: 'complete' }).state, 'complete');
+  assert.match(recordingPresentation({ state: 'complete' }).detail, /不代表追踪质量通过/);
+  assert.match(recordingPresentation({ state: 'complete' }, { connected: false }).title, /待确认/);
+  assert.match(recordingPresentation({ state: 'recording' }, { connected: false }).title, /待确认/);
+  assert.equal(recordingPresentation({ state: 'failed', error: 'disk error' }).detail, 'disk error');
+  assert.equal(recordingPresentation({ state: 'complete', stop_reason: 'low_disk_space' }).state, 'warning');
+  assert.match(recordingPresentation(null).title, /未在录制/);
+  assert.match(recordingPresentation(null, { testView: true }).detail, /五分钟/);
+  assert.match(recordingPresentation(null, { stopped: true, connected: false }).detail, /等待 App 释放/);
+});
 
 test('dedicated test page has an explicit title, unsaved-preview warning and one named recording action', async t => {
   const hub = createTelemetryHub(), ui = await createViewerServer({ hub, port: 0 }); t.after(() => ui.close());
@@ -13,6 +27,9 @@ test('dedicated test page has an explicit title, unsaved-preview warning and one
   const html = await response.text();
   assert.match(html, /<title>Quest · 正式测试与录制<\/title>/); assert.match(html, /<body data-view="test">/);
   assert.match(html, /实时动作不会自动保存/); assert.match(html, /开始 5 分钟测试并录制/);
+  assert.match(html, /class="capture-actions"/);
+  const style = await fetch(ui.url + '/workbench.css');
+  assert.equal(style.status, 200); assert.match(style.headers.get('content-type'), /text\/css/);
   assert.match(await (await fetch(ui.url + '/')).text(), /<body>/);
   assert.equal((await fetch(ui.url + '/test', { headers: { Origin: 'https://example.org' } })).status, 403);
 });

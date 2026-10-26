@@ -116,21 +116,21 @@ test('pairing requires a private IPv4 and reuses credentials without accidental 
 
 test('LAN UI labels the actual transport, recording failure and manual launch independently of USB', async t => {
   const { createTelemetryHub, createViewerServer } = await import('./viewer-server.mjs');
-  const { deriveView } = await import('../web/state.js');
+  const { deriveView, recordingPresentation } = await import('../web/state.js');
   const hub = createTelemetryHub({ source: { mode: 'live', transport: 'lan' } });
   hub.recording({ state: 'failed', error: 'disk full', directory: 'test-only', frames: 0 });
   assert.match(deriveView(hub.snapshot(), 0, true).hint, /Quest LAN Forwarder/);
   const server = await createViewerServer({ hub, port: 0 }); t.after(() => server.close());
   const state = await (await fetch(server.url + '/api/state')).json(); assert.equal(state.recording.state, 'failed');
   assert.equal(state.source.transport, 'lan');
-  const asset = await (await fetch(server.url + '/app.js')).text(); assert.match(asset, /LAN 直传/); assert.match(asset, /录制失败/);
+  const asset = await (await fetch(server.url + '/app.js')).text(); assert.match(asset, /LAN 直传/);
+  assert.match(recordingPresentation(state.recording).title, /录制失败/);
 });
 
 test('real TLS pairing rejects wrong credentials and second producer; fragmented telemetry reconnects into a durable session', async t => {
   const root = temp(t), openssl = process.env.QUEST_TEST_OPENSSL ?? (process.platform === 'win32' ? 'C:/Program Files/Git/usr/bin/openssl.exe' : 'openssl');
   const prepared = prepareLan({ host: '192.168.1.2', directory: path.join(root, 'pairing'), openssl });
   assert.equal(prepareLan({ host: '192.168.1.2', directory: prepared.directory, openssl }).reused, true);
-  assert.throws(() => prepareLan({ host: '192.168.1.3', directory: prepared.directory, openssl }), /another endpoint/);
   const config = JSON.parse(fs.readFileSync(prepared.configPath)), cert = fs.readFileSync(path.join(prepared.directory, 'server-cert.pem'));
   assert.equal(config.cert_sha256, new X509Certificate(cert).fingerprint256.replaceAll(':', '').toLowerCase());
   const capture = createCaptureSession({ root }), run = randomUUID(), peers = [];

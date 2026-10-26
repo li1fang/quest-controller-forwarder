@@ -10,7 +10,7 @@ export const DEFAULT_UI_PORT = 8787;
 export function createTelemetryHub({ source = { mode: 'live' }, now = Date.now } = {}) {
   let connected = false, frame = null, status = null, receivedAt = null;
   let connectionId = 0, frameCount = 0, arrivals = [], error = null;
-  let startup = null, controls = null, recording = null, validation = null;
+  let startup = null, controls = null, recording = null, validation = null, storage = null;
   const listeners = new Set();
   const emit = () => { for (const listener of listeners) listener(); };
   return {
@@ -33,11 +33,12 @@ export function createTelemetryHub({ source = { mode: 'live' }, now = Date.now }
     controls(value) { controls = value; emit(); },
     recording(value) { recording = value; emit(); },
     validation(value) { validation = value; emit(); },
+    storage(value) { storage = value; emit(); },
     subscribe(listener) { listeners.add(listener); return () => listeners.delete(listener); },
     snapshot() {
       const time = now();
       arrivals = arrivals.filter(value => value > time - 1000);
-      return { application: { id: 'quest-usb-monitor', api_version: 1 }, source, startup, controls, recording, validation, transport_connected: connected, connection_id: connectionId,
+      return { application: { id: 'quest-usb-monitor', api_version: 1 }, source, startup, controls, recording, validation, storage, transport_connected: connected, connection_id: connectionId,
         server_time_ms: time, frame_received_at_ms: receivedAt,
         frame_rate_hz: arrivals.length, frame_count: frameCount, frame, status, last_error: error };
     },
@@ -46,11 +47,13 @@ export function createTelemetryHub({ source = { mode: 'live' }, now = Date.now }
 
 const routes = new Map([
   ['/', ['web/index.html', 'text/html; charset=utf-8']],
+  ['/capture', ['web/index.html', 'text/html; charset=utf-8']],
   ['/test', ['web/index.html', 'text/html; charset=utf-8']],
   ['/app.js', ['web/app.js', 'text/javascript; charset=utf-8']],
   ['/scene.js', ['web/scene.js', 'text/javascript; charset=utf-8']],
   ['/state.js', ['web/state.js', 'text/javascript; charset=utf-8']],
   ['/style.css', ['web/style.css', 'text/css; charset=utf-8']],
+  ['/workbench.css', ['web/workbench.css', 'text/css; charset=utf-8']],
   ['/vendor/three.module.js', ['node_modules/three/build/three.module.js', 'text/javascript; charset=utf-8']],
   ['/vendor/three.core.js', ['node_modules/three/build/three.core.js', 'text/javascript; charset=utf-8']],
   ['/vendor/OrbitControls.js', ['node_modules/three/examples/jsm/controls/OrbitControls.js', 'text/javascript; charset=utf-8']],
@@ -104,7 +107,8 @@ export async function createViewerServer({ hub, port = DEFAULT_UI_PORT, onStop, 
       Promise.resolve().then(action).then(result => {
         response.writeHead(200, { 'Content-Type': 'application/json' }).end(JSON.stringify({ recording: result }));
       }).catch(error => {
-        hub.error(error); response.writeHead(500, { 'Content-Type': 'application/json' }).end(JSON.stringify({ error: 'Capture operation failed; inspect recording status' }));
+        if (error.statusCode !== 507) hub.error(error);
+        response.writeHead(error.statusCode === 507 ? 507 : 500, { 'Content-Type': 'application/json' }).end(JSON.stringify({ error: error.statusCode === 507 ? '磁盘剩余空间不足或暂不可读取，未开始新采集；原有数据保留。' : 'Capture operation failed; inspect recording status' }));
       }); return;
     }
     if (pathname === '/api/stop' && request.method === 'POST' && onStop) {
@@ -129,12 +133,13 @@ export async function createViewerServer({ hub, port = DEFAULT_UI_PORT, onStop, 
     }
     const asset = routes.get(pathname);
     if (!asset) { response.writeHead(404).end('Not found'); return; }
-    if (pathname === '/test') {
+    if (pathname === '/test' || pathname === '/capture') {
       fs.readFile(path.join(project, asset[0]), 'utf8', (error, html) => {
         if (error) { response.writeHead(404).end('Asset unavailable'); return; }
-        const testPage = html.replace('<title>Quest / 手柄观测台</title>', '<title>Quest · 正式测试与录制</title>')
-          .replace('<body>', '<body data-view="test">').replace('<h1>手柄观测台', '<h1>正式测试与录制');
-        response.writeHead(200, { 'Content-Type': asset[1] }).end(testPage);
+        const test = pathname === '/test';
+        const page = html.replace('<title>Quest / 手柄观测台</title>', test ? '<title>Quest · 正式测试与录制</title>' : '<title>Quest · 日常采集（无固定时长）</title>')
+          .replace('<body>', test ? '<body data-view="test">' : '<body data-view="capture">').replace('<h1>手柄观测台', test ? '<h1>正式测试与录制' : '<h1>日常采集');
+        response.writeHead(200, { 'Content-Type': asset[1] }).end(page);
       }); return;
     }
     const stream = fs.createReadStream(path.join(project, asset[0]));

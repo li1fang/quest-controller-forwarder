@@ -1,27 +1,27 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import net from 'node:net';
-import { randomBytes, X509Certificate } from 'node:crypto';
+import { randomBytes, X509Certificate, createPrivateKey } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
-
-export function isPrivateIPv4(host) {
-  if (net.isIP(host) !== 4) return false;
-  const [a, b] = host.split('.').map(Number);
-  return a === 10 || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168);
-}
+import { isPrivateIPv4, readPairing, writePairing } from './lan-pairing.mjs';
+export { isPrivateIPv4 } from './lan-pairing.mjs';
 
 export function prepareLan({ host, port = 19428, directory = '.local/lan', openssl = 'openssl' }) {
   if (!isPrivateIPv4(host)) throw new Error('Choose an explicit private LAN IPv4 address');
   if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error('Invalid LAN port');
   directory = path.resolve(directory);
-  fs.mkdirSync(directory, { recursive: true });
+  fs.mkdirSync(directory, { recursive: true, mode: 0o700 });
   const configPath = path.join(directory, 'receiver.json');
   if (fs.existsSync(configPath)) {
-    const existing = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-    if (existing.host !== host || existing.port !== port) throw new Error('Existing pairing uses another endpoint; use a new directory and rebuild the LAN APK');
-    new X509Certificate(fs.readFileSync(path.join(directory, 'server-cert.pem')));
-    return { directory, configPath, appConfig: path.join(directory, 'lan-config.json'), reused: true };
+    const existing = readPairing(configPath);
+    const certificate = new X509Certificate(fs.readFileSync(path.join(directory, 'server-cert.pem')));
+    if (certificate.fingerprint256.replaceAll(':', '').toLowerCase() !== existing.cert_sha256 ||
+        !certificate.checkPrivateKey(createPrivateKey(fs.readFileSync(path.join(directory, 'server-key.pem'))))) throw new Error('Existing LAN certificate/key mismatch; pairing kept');
+    const updated = existing.host !== host || existing.port !== port;
+    if (updated) writePairing(configPath, { ...existing, host, port });
+    // Recreate a missing/outdated client export after an interrupted previous update.
+    writePairing(path.join(directory, 'lan-config.json'), { ...existing, host, port });
+    return { directory, configPath, appConfig: path.join(directory, 'lan-config.json'), reused: true, endpoint_updated: updated };
   }
   const cert = path.join(directory, 'server-cert.pem'), key = path.join(directory, 'server-key.pem');
   if (fs.existsSync(cert) || fs.existsSync(key)) throw new Error('Incomplete pairing directory; use a new empty directory');
@@ -30,7 +30,7 @@ export function prepareLan({ host, port = 19428, directory = '.local/lan', opens
   fs.chmodSync(key, 0o600);
   const certificate = new X509Certificate(fs.readFileSync(cert));
   const config = { version: 1, host, port, cert_sha256: certificate.fingerprint256.replaceAll(':', '').toLowerCase(), token: randomBytes(32).toString('hex') };
-  for (const file of [configPath, path.join(directory, 'lan-config.json')]) fs.writeFileSync(file, JSON.stringify(config, null, 2) + '\n', { flag: 'wx', mode: 0o600 });
+  for (const file of [configPath, path.join(directory, 'lan-config.json')]) writePairing(file, config);
   return { directory, configPath, appConfig: path.join(directory, 'lan-config.json'), reused: false };
 }
 

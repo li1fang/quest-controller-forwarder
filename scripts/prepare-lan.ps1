@@ -1,4 +1,4 @@
-param([Parameter(Mandatory=$true)][string]$HostAddress, [string]$Directory = '.local\lan')
+param([Parameter(Mandatory=$true)][string]$HostAddress, [string]$Directory = '.local\lan', [switch]$Build)
 $ErrorActionPreference = 'Stop'
 . "$PSScriptRoot\resolve-node.ps1"
 $nodeExecutable = Find-QuestNode
@@ -14,5 +14,7 @@ try {
     $accountSid = [Security.Principal.WindowsIdentity]::GetCurrent().User.Value
     & icacls.exe $prepared.directory /inheritance:r /grant:r "*$($accountSid):(OI)(CI)F" '*S-1-5-18:(OI)(CI)F' /Q
     if ($LASTEXITCODE -ne 0) { throw 'Could not restrict LAN pairing directory permissions.' }
-    & "$PSScriptRoot\build.ps1" -LanConfig $prepared.appConfig
+    if ($Build) { & "$PSScriptRoot\build.ps1" -Lan }
+    Write-Host 'Pairing prepared. Build the universal APK once with build.ps1 -Lan; use Pair-Quest-LAN.cmd to import over authorized USB.'
+    Write-Host 'Changing this endpoint requires importing the updated pairing file, not rebuilding the APK.'
 } finally { Pop-Location }

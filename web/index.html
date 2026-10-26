@@ -6,6 +6,7 @@
   <meta name="color-scheme" content="dark">
   <title>Quest / 手柄观测台</title>
   <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="/workbench.css">
   <script type="importmap">{"imports":{"three":"/vendor/three.module.js","three/addons/controls/OrbitControls.js":"/vendor/OrbitControls.js"}}</script>
   <script type="module" src="/app.js"></script>
 </head>
@@ -19,13 +20,23 @@
       <div class="readout"><span id="rate-title">采集频率</span><strong id="frame-rate">—<small> Hz</small></strong></div>
       <div class="readout"><span>数据帧龄</span><strong id="frame-age">—<small> ms</small></strong></div>
       <div id="source-badge" class="source-badge">本机 · USB 实时</div>
-      <button id="start-capture" class="stop-session" hidden>开始新采集</button>
-      <button id="stop-session" class="stop-session" hidden>停止本次采集</button>
-      <button id="end-service" class="stop-session" hidden>结束服务并释放保活</button>
     </div>
   </header>
 
-  <div id="capture-notice" class="capture-notice" hidden role="status"><strong id="capture-notice-title">未在录制</strong><span id="capture-notice-detail">实时动作不会自动保存。</span><a id="open-test-page" href="/test">打开正式测试与录制</a></div>
+  <nav class="workspace-nav" aria-label="工作区">
+    <a id="capture-nav" href="/capture">日常采集<span>LIVE</span></a>
+    <a id="test-nav" href="/test">五分钟验收<span>TEST</span></a>
+    <details class="workflow-help"><summary>回放与标注 ↗</summary><div><strong>保存一段，再开始标注</strong><p>在项目目录运行 <code>Annotate-Quest.cmd</code>，会打开最新的完整录制。需要选择其他会话时使用 <code>--session</code> 参数。</p><p>标注服务默认使用 8788 端口，头显可以关闭；标签单独保存，原始数据不变。</p></div></details>
+  </nav>
+
+  <section class="capture-deck" aria-label="录制控制">
+    <div class="capture-command">
+      <div id="capture-notice" class="capture-notice" role="status"><span class="eyebrow">RECORDING / 本机存储</span><strong id="capture-notice-title">等待本地服务</strong><span id="capture-notice-detail">实时动作不会自动保存。日常录制无固定时长，手动停止并保存。</span></div>
+      <div class="capture-actions"><button id="start-capture" class="stop-session primary-action" hidden>开始录制</button><button id="stop-session" class="stop-session save-action" hidden>停止并保存</button></div>
+    </div>
+    <div class="recording-bar" id="recording-bar" hidden><strong id="recording-status"></strong><span id="recording-elapsed"></span><span id="recording-bytes"></span><span id="recording-count"></span><code id="recording-directory"></code></div>
+    <div id="storage-status" class="storage-status" hidden role="status"></div>
+  </section>
 
   <div class="status-bar" id="status-bar" data-tone="muted" role="status" aria-live="polite">
     <span class="status-dot"></span><strong id="status-title">等待数据通道</strong>
@@ -41,8 +52,7 @@
     <details id="startup-diagnostics"><summary>启动诊断</summary><pre id="startup-detail"></pre></details>
   </div>
 
-  <div class="recording-bar" id="recording-bar" hidden role="status"><strong id="recording-status"></strong><span id="recording-count"></span><code id="recording-directory"></code></div>
-  <div id="power-status" class="power-status" hidden role="status"><strong id="power-title"></strong><span id="power-detail"></span></div>
+  <div id="power-status" class="power-status" hidden><details><summary id="power-title">软件保活</summary><p id="power-detail"></p></details><button id="end-service" class="stop-session" hidden>结束服务并释放保活</button></div>
   <details id="validation-panel" class="validation-panel" open hidden>
     <summary id="validation-summary">本轮检查 · 不戴头显 / USB 拔线 / 双手 6DoF 与按键</summary>
     <p id="validation-mode-note"></p>

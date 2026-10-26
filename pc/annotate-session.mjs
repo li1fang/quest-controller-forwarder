@@ -14,8 +14,10 @@ export function readAnnotations(directory, sessionId) {
       (doc.deleted_annotations !== undefined && !Array.isArray(doc.deleted_annotations))) throw new Error('Annotation document identity mismatch');
   return doc;
 }
-async function verified(directory, expectedRawFiles) {
-  const report = await inspectSession(directory);
+async function verified(directory, expectedRawFiles, sessionIndex) {
+  if (sessionIndex && path.resolve(directory) !== sessionIndex.directory) throw new Error('Source recording identity mismatch');
+  if (sessionIndex) await sessionIndex.assertUnchanged();
+  const report = sessionIndex?.report ?? await inspectSession(directory);
   if (!report.integrity_ok) throw new Error('Finalize and verify the session before annotation');
   if (expectedRawFiles && !sameFiles(expectedRawFiles, rawFiles(report))) throw new Error('Source recording changed; reopen the session');
   return report;
@@ -36,14 +38,17 @@ function transaction(directory, report, change) {
   }
 }
 
-async function saveAnnotation({ directory, label, side = 'both', start, end = start, notes = '', id, expectedRawFiles }) {
+async function saveAnnotation({ directory, label, side = 'both', start, end = start, notes = '', id, expectedRawFiles, sessionIndex }) {
   if (!['left', 'right', 'both'].includes(side) || typeof label !== 'string' || !label.trim() || label.length > 80 || typeof notes !== 'string' || notes.length > 2000)
     throw new Error('Invalid annotation label, side or notes');
   if (!Number.isSafeInteger(start) || !Number.isSafeInteger(end) || start < 1 || end < start) throw new Error('Invalid inclusive sample range');
-  const report = await verified(directory, expectedRawFiles);
+  const report = await verified(directory, expectedRawFiles, sessionIndex);
   let first, last, segment;
   const quality = { frames: 0, dual_6dof_frames: 0, left_tracked_frames: 0, right_tracked_frames: 0, status_packets: 0 };
-  for (const file of report.files.filter(file => file.file.startsWith('raw/'))) {
+  if (sessionIndex) {
+    const range = await sessionIndex.annotationRange(start, end);
+    first = range.first; last = range.last; segment = range.segment; Object.assign(quality, range.quality);
+  } else for (const file of report.files.filter(file => file.file.startsWith('raw/'))) {
     const input = fs.createReadStream(path.join(directory, file.file));
     const lines = readline.createInterface({ input, crlfDelay: Infinity });
     try {
@@ -65,6 +70,7 @@ async function saveAnnotation({ directory, label, side = 'both', start, end = st
     } finally { lines.close(); input.destroy(); }
   }
   if (!first || !last || !segment) throw new Error('Range endpoints must refer to recorded pose frames');
+  if (sessionIndex) await sessionIndex.assertUnchanged();
   return transaction(directory, report, doc => {
     const previous = id === undefined ? null : doc.annotations.find(item => item.id === id);
     if (id !== undefined && !previous) throw new Error('Annotation not found');
@@ -80,8 +86,8 @@ export async function editAnnotation(options) {
   if (typeof options.id !== 'string' || !options.id) throw new Error('Annotation id required');
   return saveAnnotation(options);
 }
-export async function deleteAnnotation({ directory, id, expectedRawFiles }) {
-  const report = await verified(directory, expectedRawFiles);
+export async function deleteAnnotation({ directory, id, expectedRawFiles, sessionIndex }) {
+  const report = await verified(directory, expectedRawFiles, sessionIndex);
   return transaction(directory, report, doc => {
     const index = doc.annotations.findIndex(item => item.id === id);
     if (index < 0) throw new Error('Annotation not found');
@@ -89,8 +95,8 @@ export async function deleteAnnotation({ directory, id, expectedRawFiles }) {
     (doc.deleted_annotations ??= []).push(deletion); doc.annotations.splice(index, 1); return deletion;
   });
 }
-export async function restoreAnnotation({ directory, deletion_id, expectedRawFiles }) {
-  const report = await verified(directory, expectedRawFiles);
+export async function restoreAnnotation({ directory, deletion_id, expectedRawFiles, sessionIndex }) {
+  const report = await verified(directory, expectedRawFiles, sessionIndex);
   return transaction(directory, report, doc => {
     const entry = doc.deleted_annotations?.find(item => item.deletion_id === deletion_id && !item.restored_at_utc);
     if (!entry || doc.annotations.some(item => item.id === entry.annotation.id)) throw new Error('Deleted annotation not found');

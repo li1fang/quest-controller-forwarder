@@ -1106,3 +1106,8 @@ body[data-view="test"] #start-validation { font-size: 14px; padding: 11px 16px; 
 .power-status strong { color: #cbd6e4; }
 .power-status[data-warning="true"] { border-color: #bc8948; }
 .power-status[hidden] { display: none; }
+.storage-status { margin: 8px 28px; color: #9db4c2; font-size: 12px; line-height: 1.6; }
+.storage-status[hidden] { display: none; }
+.storage-status[data-warning="true"] { color: #f2bf80; }
+#recording-elapsed { font-variant-numeric: tabular-nums; color: #e0fff2; }
+#recording-bytes { color: #9ec8bc; }

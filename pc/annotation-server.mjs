@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { randomBytes } from 'node:crypto';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { loadAnnotationSession } from './annotation-session.mjs';
+import { openAnnotationSession } from './annotation-session.mjs';
 import { readAnnotations, addAnnotation, editAnnotation, deleteAnnotation, restoreAnnotation } from './annotate-session.mjs';
 import { openLocalBrowser } from './launch-options.mjs';
 
@@ -11,14 +11,15 @@ const project = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const assets = new Map([
   ['/', ['web/annotate.html', 'text/html; charset=utf-8']], ['/annotate', ['web/annotate.html', 'text/html; charset=utf-8']],
   ['/annotation.js', ['web/annotation.js', 'text/javascript; charset=utf-8']], ['/annotation.css', ['web/annotation.css', 'text/css; charset=utf-8']],
+  ['/workbench.css', ['web/workbench.css', 'text/css; charset=utf-8']],
   ['/annotation-state.js', ['web/annotation-state.js', 'text/javascript; charset=utf-8']],
   ['/scene.js', ['web/scene.js', 'text/javascript; charset=utf-8']], ['/state.js', ['web/state.js', 'text/javascript; charset=utf-8']],
   ['/vendor/three.module.js', ['node_modules/three/build/three.module.js', 'text/javascript; charset=utf-8']],
   ['/vendor/three.core.js', ['node_modules/three/build/three.core.js', 'text/javascript; charset=utf-8']],
   ['/vendor/OrbitControls.js', ['node_modules/three/examples/jsm/controls/OrbitControls.js', 'text/javascript; charset=utf-8']],
 ]);
-export async function createAnnotationServer({ directory, port = 8787 } = {}) {
-  const model = await loadAnnotationSession(directory), token = randomBytes(24).toString('hex');
+export async function createAnnotationServer({ directory, port = 8788 } = {}) {
+  const model = await openAnnotationSession(directory), token = randomBytes(24).toString('hex');
   readAnnotations(model.directory, model.report.session_id);
   let actualPort = port, queue = Promise.resolve(), closing;
   const doc = () => readAnnotations(model.directory, model.report.session_id);
@@ -45,7 +46,7 @@ export async function createAnnotationServer({ directory, port = 8787 } = {}) {
         const actions = { add: addAnnotation, edit: editAnnotation, delete: deleteAnnotation, restore: restoreAnnotation };
         if (!body || !Object.hasOwn(actions, body.action)) { json(response, 400, { error: '未知标注操作。' }); return; }
         const operation = queue.then(async () => {
-          const result = await actions[body.action]({ ...body, directory: model.directory, expectedRawFiles: model.rawFiles });
+          const result = await actions[body.action]({ ...body, directory: model.directory, expectedRawFiles: model.rawFiles, sessionIndex: model });
           json(response, body.action === 'add' ? 201 : 200, { result, document: doc() });
         });
         queue = operation.catch(error => {
@@ -64,8 +65,9 @@ export async function createAnnotationServer({ directory, port = 8787 } = {}) {
     }
     if (url.pathname === '/api/frames') {
       const offset = url.searchParams.get('offset') ?? '0', limit = url.searchParams.get('limit') ?? '256';
-      if (!/^\d+$/.test(offset) || !/^\d+$/.test(limit) || !Number.isSafeInteger(Number(offset)) || Number(offset) >= model.frames.length || Number(limit) < 1 || Number(limit) > 512) { json(response, 400, { error: 'Invalid frame window' }); return; }
-      json(response, 200, { offset: Number(offset), frames: model.frames.slice(Number(offset), Number(offset) + Number(limit)) }); return;
+      if (!/^\d+$/.test(offset) || !/^\d+$/.test(limit) || !Number.isSafeInteger(Number(offset)) || Number(offset) >= model.metadata.frame_count || Number(limit) < 1 || Number(limit) > 512) { json(response, 400, { error: 'Invalid frame window' }); return; }
+      model.readFrames(Number(offset), Number(limit)).then(frames => json(response, 200, { offset: Number(offset), frames }))
+        .catch(() => json(response, 409, { error: '原始数据已变化或读取失败，请保留原件并重新打开会话。' })); return;
     }
     if (url.pathname === '/favicon.ico') { response.writeHead(204).end(); return; }
     const asset = assets.get(url.pathname);
@@ -94,12 +96,12 @@ if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.ar
       else if (['--session', '--port'].includes(args[i])) { const key = args[i], value = args[++i]; if (!value || value.startsWith('--')) throw new Error('Missing option value'); if (key === '--session') options.directory = path.resolve(value); else { options.port = Number(value); if (!Number.isInteger(options.port) || options.port < 1 || options.port > 65535) throw new Error('Invalid port'); } }
       else throw new Error('Unknown option');
     }
-    if (options.help) console.log('node pc/annotation-server.mjs [--session recordings/<directory>] [--port 8787] [--no-open] (defaults to latest completed recording)');
+    if (options.help) console.log('node pc/annotation-server.mjs [--session recordings/<directory>] [--port 8788] [--no-open] (defaults to latest completed recording)');
     else {
       const ui = await createAnnotationServer({ directory: options.directory ?? latestSession(), port: options.port });
       process.once('SIGINT', () => ui.close()); process.once('SIGTERM', () => ui.close());
       console.error(`Recorded annotation workspace: ${ui.url}/annotate`);
-      console.error(`Verified ${ui.model.frames.length} frames. Recording receivers and headset keepalive are NOT started.`);
+      console.error(`Verified ${ui.model.metadata.frame_count} indexed frames. Recording receivers and headset keepalive are NOT started.`);
       if (options.open) await openLocalBrowser(ui.url);
     }
   } catch (error) { console.error(error.message); process.exitCode = 1; }

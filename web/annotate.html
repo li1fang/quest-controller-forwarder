@@ -4,11 +4,13 @@
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="dark">
   <title>Quest · 姿态标注</title>
   <link rel="stylesheet" href="/annotation.css">
+  <link rel="stylesheet" href="/workbench.css">
   <script type="importmap">{"imports":{"three":"/vendor/three.module.js","three/addons/controls/OrbitControls.js":"/vendor/OrbitControls.js"}}</script>
   <script type="module" src="/annotation.js"></script>
 </head>
-<body>
-  <header><div><div class="eyebrow">QUEST / ANNOTATION WORKSPACE</div><h1>姿态标注<span>01</span></h1></div><div class="header-actions"><span class="recorded">历史回放 · 非实时</span><button id="close-workspace">关闭标注服务</button></div></header>
+<body class="annotation-workspace">
+  <header class="app-header"><div><div class="eyebrow">QUEST / CONTROL ROOM</div><h1>姿态标注<span class="version">01</span></h1></div><div class="header-actions"><span class="recorded">历史回放 · 非实时</span><button id="close-workspace">关闭标注服务</button></div></header>
+  <nav class="workspace-nav" aria-label="工作区"><a href="/annotate" aria-current="page">回放与标注<span>REPLAY</span></a><details class="workflow-help"><summary>采集与会话说明</summary><div><strong>每次打开一个已保存会话</strong><p>运行 <code>Annotate-Quest.cmd --session "recordings/会话目录"</code> 可选择其他录制。日常采集使用 <code>Record-Quest.cmd</code>，默认在 8787 端口独立运行。</p><p>当前页仅写入标注，不启动设备保活。</p></div></details></nav>
   <section class="session-strip" aria-label="录制信息"><div><span class="caption">当前录制</span><strong id="session-name">正在校验并载入…</strong></div><div class="session-facts"><span id="session-facts">只读原始姿态 · 标注单独保存</span><span id="integrity-badge">等待校验</span></div></section>
   <div id="message" role="status" aria-live="polite">正在读取录制。头显和手柄可以保持关闭。</div>
   <main>

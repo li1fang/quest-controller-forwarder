@@ -27,18 +27,18 @@ Existing installations may be selected with `-Sdk` and `-Jdk` on build.ps1. AAR 
 ## LAN pairing and installation
 
 1. Enable developer mode / USB debugging on your own headset. Connect once and approve that computer in the headset.
-2. Find the PC's private IPv4 reachable from the headset. Use a stable address; the current minimal client embeds the paired address.
-3. Generate pairing and build the LAN APK:
+2. Find the PC's private IPv4 reachable from the headset. The universal client keeps it in runtime pairing, outside the APK. The mixed setup/capture launch path in 0.8.1 requires Horizon OS 69+.
+3. Generate pairing and build the universal LAN APK once:
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/prepare-lan.ps1 -HostAddress YOUR_PRIVATE_PC_IP
-adb devices
-adb -s YOUR_USB_SERIAL install -r dist/quest-lan-forwarder.apk
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build.ps1 -Lan
+.\Pair-Quest-LAN.cmd
 ```
 
 The script creates a pinned TLS certificate and random pairing token in `.local/lan/`, with current-Windows-user ACLs. OpenSSL from Git for Windows or PATH is required. If Windows blocks the incoming connection, inspect the rule and run `Allow-Quest-LAN.cmd` as Administrator. The helper reads the paired PC address and scopes TCP 19428 to its private /24 subnet and the chosen Node executable; other network layouts need an explicitly reviewed scoped rule.
 
-The personalized LAN APK contains its pairing token. Do not attach it to a public release or share it as a universal installer. Source distribution is the supported preparation here; each user builds their own paired APK. Changing PC address or pairing requires rebuilding/reinstalling that APK.
+The universal APK contains no endpoint, token or certificate. Confirm the staged pairing's endpoint and fingerprint in the headset, then start capture. Changing PC address/pairing requires a new runtime import, not a rebuild or reinstall. Keep exported pairing files private. Old personalized APKs must not be shared. The 0.8.1 setup/launcher flow has been checked on Quest Pro, with acquisition-quality limitations documented separately; no new binary Release is published yet. See [runtime pairing](runtime-pairing.md) for USB staging, optional file-picker import and validation boundaries.
 
 Daily operation uses `Start-Quest-LAN-Preview.cmd`, then manual app launch on the headset; see [daily use](daily-use.md). No USB, wireless ADB or Store PIN is required during LAN operation. USB and wireless ADB are alternate development paths, not prerequisites for offline annotation.
 

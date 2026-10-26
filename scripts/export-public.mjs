@@ -6,7 +6,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const project = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const rootFiles = ['.gitattributes', '.gitignore', 'README.md', 'LICENSE', 'THIRD_PARTY_NOTICES.md', 'CONTRIBUTING.md', 'SECURITY.md', 'CHANGELOG.md', 'CMakeLists.txt', 'package.json', 'pnpm-lock.yaml'];
-const docs = ['daily-use.md', 'annotation-use.md', 'build.md', 'protocol.md', 'validation.md'];
+const docs = ['daily-use.md', 'annotation-use.md', 'build.md', 'protocol.md', 'validation.md', 'runtime-pairing.md', 'interface.md'];
 const extensions = new Set(['.mjs', '.js', '.ps1', '.cs', '.java', '.cpp', '.h', '.html', '.css', '.json', '.xml', '.yml', '.yaml', '.md', '.txt']);
 export function auditSourceFile(name, text) {
   if (/(^|\/)(?:\.git|\.local|recordings|validation|build|dist|node_modules)(\/|$)/.test(name) || /(?:receiver|lan-config)\.json$|\.(?:apk|pem|key|keystore|aar|dex|jar|png|jpg|zip)$/i.test(name)) throw new Error(`Private or generated file selected: ${name}`);

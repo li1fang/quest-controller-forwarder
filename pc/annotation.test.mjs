@@ -6,7 +6,7 @@ import os from 'node:os';
 import { createHash, randomUUID } from 'node:crypto';
 import { createCaptureSession } from './capture-session.mjs';
 import { inspectSession } from './inspect-session.mjs';
-import { loadAnnotationSession } from './annotation-session.mjs';
+import { loadAnnotationSession, openAnnotationSession } from './annotation-session.mjs';
 import { addAnnotation, editAnnotation, deleteAnnotation, restoreAnnotation, readAnnotations } from './annotate-session.mjs';
 import { createAnnotationServer } from './annotation-server.mjs';
 import { frameAtTime, selectionQuality, formatTime } from '../web/annotation-state.js';
@@ -55,6 +55,38 @@ test('inclusive annotations retain quality and hashes; edit, recoverable delete 
   assert.equal(restored.id, label.id); assert.equal(readAnnotations(capture.directory, capture.sessionId).annotations.length, 1);
   assert.deepEqual(sourceHashes(capture.directory), before); assert.equal((await inspectSession(capture.directory)).integrity_ok, true);
 });
+
+test('file-backed replay preserves CRLF/UTF-8 byte positions, status gaps, and indexed label quality without retaining pose objects', async t => {
+  const capture = fixture(t), manifestFile = path.join(capture.directory, 'manifest.json');
+  const manifest = JSON.parse(fs.readFileSync(manifestFile)), raw = manifest.files.filter(file => file.file.startsWith('raw/'));
+  const packets = raw.flatMap(file => fs.readFileSync(path.join(capture.directory, file.file), 'utf8').trim().split('\n').map(JSON.parse));
+  packets[0].fixture_note = '合成🙂测试'; packets[1].message = '合成🙂跨缓冲区'.repeat(12000);
+  for (const file of raw) fs.unlinkSync(path.join(capture.directory, file.file));
+  const bytes = Buffer.from(packets.map(p => JSON.stringify(p) + '\r\n').join(''));
+  fs.writeFileSync(path.join(capture.directory, 'raw/000001.jsonl'), bytes);
+  manifest.files = [{ file: 'raw/000001.jsonl', bytes: bytes.length, packets: packets.length, sha256: createHash('sha256').update(bytes).digest('hex') }, ...manifest.files.filter(f => !f.file.startsWith('raw/'))];
+  manifest.statistics.bytes = bytes.length; fs.writeFileSync(manifestFile, JSON.stringify(manifest));
+  const before = sourceHashes(capture.directory), model = await openAnnotationSession(capture.directory);
+  assert.equal(model.frames, undefined); assert.equal(model.metadata.frame_count, 3);
+  const frames = await model.readFrames(0, 512);
+  assert.deepEqual(frames.map(p => p.capture.sample_id.split(':').at(-1)), ['1', '3', '4']);
+  assert.equal(frames[0].fixture_note, '合成🙂测试'); assert.equal((await model.readFrames(2, 1))[0].device_monotonic_ns, frames[2].device_monotonic_ns);
+  const label = await addAnnotation({ directory: capture.directory, label: 'indexed-fixture', start: 1, end: 3, sessionIndex: model, expectedRawFiles: model.rawFiles });
+  assert.deepEqual(label.quality, { frames: 2, dual_6dof_frames: 1, left_tracked_frames: 1, right_tracked_frames: 2, status_packets: 1 });
+  await assert.rejects(model.annotationRange(1, 4), /crosses coordinate/);
+  assert.deepEqual(sourceHashes(capture.directory), before);
+});
+test('lazy frame reads and cached-index annotation writes reject source changes after opening', async t => {
+  const capture = fixture(t), server = await createAnnotationServer({ directory: capture.directory, port: 0 }); t.after(() => server.close());
+  assert.equal(server.model.frames, undefined);
+  const session = await (await fetch(server.url + '/api/session')).json();
+  const annotationsBefore = fs.readFileSync(path.join(capture.directory, 'annotations.json'));
+  fs.appendFileSync(path.join(capture.directory, 'raw/000001.jsonl'), '\n');
+  assert.equal((await fetch(server.url + '/api/frames?offset=0&limit=1')).status, 409);
+  const response = await fetch(server.url + '/api/annotation', { method: 'POST', headers: { 'x-quest-token': session.token },
+    body: JSON.stringify({ action: 'add', label: 'must-not-save', start: 1, sessionIndex: { directory: 'untrusted-client' } }) });
+  assert.equal(response.status, 409); assert.deepEqual(fs.readFileSync(path.join(capture.directory, 'annotations.json')), annotationsBefore);
+});
 test('invalid endpoints, coordinate crossings, wrong document identity and changed source hashes reject before annotation writes', async t => {
   const capture = fixture(t), file = path.join(capture.directory, 'annotations.json'), original = fs.readFileSync(file);
   const common = { directory: capture.directory, label: 'test', start: 1 };
@@ -81,6 +113,8 @@ test('annotation HTTP guards writes, bounds frame windows, persists across resta
   const url = server.url, session = await (await fetch(url + '/api/session')).json();
   assert.equal(session.integrity_verified, true); assert.equal((await fetch(url + '/annotate')).status, 200);
   const html = await (await fetch(url)).text(); assert.match(html, /历史回放 · 非实时/); assert.match(html, /保存标注/);
+  const stylesheet = await fetch(server.url + '/workbench.css');
+  assert.equal(stylesheet.status, 200); assert.match(stylesheet.headers.get('content-type'), /text\/css/);
   assert.equal((await fetch(url + '/api/frames?offset=0&limit=2')).status, 200);
   for (const query of ['offset=-1', 'offset=999999', 'limit=513', 'offset=1.2', 'offset=90071992547409999']) assert.equal((await fetch(url + '/api/frames?' + query)).status, 400);
   assert.equal((await fetch(url + '/api/session', { headers: { Origin: 'https://example.org' } })).status, 403);

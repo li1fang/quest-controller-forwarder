@@ -7,20 +7,23 @@ export const full6dof = packet => packet.kind === 'frame' && packet.focused && [
 });
 
 export function createCaptureSession({ root = 'recordings', source = {}, onError = () => {}, onUpdate = () => {}, chunkBytes = 32 * 1024 * 1024,
-  chunkMs = 60_000, syncMs = 1000, io = fs } = {}) {
+  chunkMs = 60_000, syncMs = 1000, io = fs, monotonic = () => process.hrtime.bigint() } = {}) {
   const sessionId = randomUUID(), started = new Date().toISOString();
+  const startedMono = monotonic(); let endedMono = null, stopReason = null;
   const directory = path.resolve(root, started.replaceAll(':', '-').replaceAll('.', '-') + '_' + sessionId);
   io.mkdirSync(directory, { recursive: true });
   io.mkdirSync(path.join(directory, 'raw')); // Exclusive even if an improbable id collision occurs.
   const manifestPath = path.join(directory, 'manifest.json');
   let state = 'recording', error = null, closed = false, chunk = null, index = 0, eventFd, timer, lastSync = null;
-  const files = [], runs = new Map();
+  const files = [], runs = new Map(), eventHash = createHash('sha256'); let eventBytes = 0;
   const counts = { packets: 0, frames: 0, dual_6dof_frames: 0, missing_packets: 0, duplicate_or_reordered_packets: 0,
     connections: 0, coordinate_segments: 0, bytes: 0, longest_dual_6dof_s: 0 };
-  const status = () => ({ state, session_id: sessionId, directory, ...counts, last_sync_at_utc: lastSync, error });
+  const status = () => ({ state, session_id: sessionId, directory, ...counts, started_at_utc: started,
+    elapsed_s: Number((endedMono ?? monotonic()) - startedMono) / 1e9, stop_reason: stopReason, last_sync_at_utc: lastSync, error });
   function snapshot() {
     return { schema: 'quest-capture-session-v1', session_id: sessionId, started_at_utc: started,
-      ended_at_utc: closed ? new Date().toISOString() : null, state, error, source,
+      ended_at_utc: closed ? new Date().toISOString() : null, state, error, source, stop_reason: stopReason,
+      elapsed_s: Number((endedMono ?? monotonic()) - startedMono) / 1e9,
       telemetry_schema: 'quest-usb-v1', units: { position: 'm', linear_velocity: 'm/s', angular_velocity: 'rad/s', orientation: 'xyzw' },
       coordinates: { reference: 'OpenXR LOCAL', handedness: 'right', x: 'right', y: 'up', minus_z: 'forward', floor_origin: false },
       time: { device_monotonic_ns: 'device CLOCK_MONOTONIC decimal string', xr_time_ns: 'OpenXR sample time; see sample_time_source',
@@ -42,7 +45,7 @@ export function createCaptureSession({ root = 'recordings', source = {}, onError
   }
   function fail(value) {
     if (error) return;
-    error = String(value.message ?? value); state = 'failed'; clearInterval(timer);
+    error = String(value.message ?? value); state = 'failed'; endedMono ??= monotonic(); clearInterval(timer);
     try { persistManifest(); } catch { /* Preserve last checkpoint if disk itself failed. */ }
     onUpdate(status()); onError(value);
   }
@@ -51,8 +54,11 @@ export function createCaptureSession({ root = 'recordings', source = {}, onError
     try { return operation(); } catch (value) { fail(value); throw value; }
   }
   function event(kind, details = {}) {
-    return guard(() => writeAll(eventFd, JSON.stringify({ schema: 'quest-capture-event-v1', kind, ...details,
-      at_utc: new Date().toISOString(), pc_monotonic_ns: process.hrtime.bigint().toString() }) + '\n'));
+    return guard(() => {
+      const line = JSON.stringify({ schema: 'quest-capture-event-v1', kind, ...details,
+        at_utc: new Date().toISOString(), pc_monotonic_ns: process.hrtime.bigint().toString() }) + '\n';
+      const bytes = writeAll(eventFd, line); eventHash.update(line); eventBytes += bytes; return bytes;
+    });
   }
   function closeChunk() {
     if (!chunk) return;
@@ -110,12 +116,12 @@ export function createCaptureSession({ root = 'recordings', source = {}, onError
     },
     close(reason = 'user_stop') {
       if (closed) return status();
+      endedMono ??= monotonic(); stopReason = reason;
       clearInterval(timer);
       try {
         if (!error) event('session_stopped', { reason });
         closeChunk(); io.fsyncSync(eventFd); io.closeSync(eventFd); eventFd = undefined;
-        const data = io.readFileSync(path.join(directory, 'events.jsonl'));
-        files.push({ file: 'events.jsonl', bytes: data.length, sha256: createHash('sha256').update(data).digest('hex') });
+        files.push({ file: 'events.jsonl', bytes: eventBytes, sha256: eventHash.digest('hex') });
         closed = true; state = error ? 'failed' : 'complete'; lastSync = new Date().toISOString(); persistManifest();
       } catch (value) {
         fail(value); closed = true;

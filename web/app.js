@@ -1,10 +1,12 @@
-import { deriveView, startupSteps } from './state.js';
+import { deriveView, startupSteps, formatRecordingDuration, formatStorageBytes, validationPanelVisible, recordingPresentation } from './state.js';
 import { createScene } from './scene.js';
 
 const $ = selector => document.querySelector(selector);
 const fields = {};
 const fixed = (value, places = 3) => Number.isFinite(value) ? (Math.abs(value) < 0.5 * 10 ** -places ? 0 : value).toFixed(places) : '—';
 const vectorText = value => value ? value.map(number => fixed(number, 2)).join('  ') : '—';
+const setText = (selector, value) => { const element = $(selector); if (element.textContent !== value) element.textContent = value; };
+$(document.body.dataset.view === 'test' ? '#test-nav' : '#capture-nav').setAttribute('aria-current', 'page');
 
 for (const side of ['left', 'right']) {
   const card = $('#hand-template').content.firstElementChild.cloneNode(true);
@@ -38,7 +40,7 @@ for (const [id, option] of [['show-trails', 'trails'], ['show-velocity', 'veloci
 }
 
 let snapshot = null, receivedAt = performance.now(), browserConnected = false, lastUiTime = -Infinity;
-let stoppedByUser = false, captureBusy = false, validationError = null, coverageKey = '';
+let stoppedByUser = false, captureBusy = false, validationError = null, coverageKey = '', captureError = null;
 const events = new EventSource('/events');
 events.onmessage = event => {
   try { snapshot = JSON.parse(event.data); receivedAt = performance.now(); browserConnected = true; }
@@ -47,13 +49,13 @@ events.onmessage = event => {
 events.onerror = () => { browserConnected = false; };
 async function captureAction(action) {
   if (captureBusy || !snapshot?.controls?.can_record) return;
-  captureBusy = true;
+  captureBusy = true; captureError = null;
   try {
     const response = await fetch(`/api/capture/${action}`, { method: 'POST', headers: { 'X-Quest-Token': snapshot.controls.token } });
-    if (!response.ok) throw new Error('采集操作失败，请查看录制状态');
     const result = await response.json();
+    if (!response.ok) throw new Error(result.error ?? '采集操作失败，请查看录制状态');
     snapshot.recording = result.recording;
-  } catch (error) { console.error(error); }
+  } catch (error) { captureError = error.message; }
   finally { captureBusy = false; }
 }
 $('#start-capture').addEventListener('click', () => captureAction('start'));
@@ -115,7 +117,7 @@ function updateCard(side, state) {
 }
 
 function updateValidation() {
-  const state = snapshot?.validation, visible = !!snapshot?.controls?.can_validate && !!state;
+  const state = snapshot?.validation, visible = validationPanelVisible(document.body.dataset.view, state, snapshot?.controls?.can_validate);
   $('#validation-panel').hidden = !visible;
   if (!visible) return;
   if (document.body.dataset.view === 'test') $('#validation-panel').open = true;
@@ -128,7 +130,7 @@ function updateValidation() {
     $('#validation-proximity').value = state.conditions.proximity;
   }
   $('#validation-summary').textContent = motionOnly ? '稳定性测量 · 只轻动双手，不按系统或菜单键' : '本轮检查 · 不戴头显 / USB 拔线 / 双手 6DoF 与按键';
-  $('#validation-mode-note').textContent = motionOnly ? active ? '正在验证软件保活；下方条件来自本次人工确认。只轻动双手，不按系统或菜单键。是否通过以完整录制分析为准。' : '软件保活测试：0.7.0 App，感应器不遮挡、电脑 USB 拔掉、头显摘下，只轻动双手。保活请求已发送不等于实测成功。' : '动作与应用输入按本次测量分别核对。';
+  $('#validation-mode-note').textContent = motionOnly ? active ? '正在验证软件保活；下方条件来自本次人工确认。只轻动双手，不按系统或菜单键。是否通过以完整录制分析为准。' : '五分钟验收：感应器不遮挡、电脑 USB 拔掉、头显摘下，只轻动双手。日常长时录制请使用日常采集页。' : '动作与应用输入按本次测量分别核对。';
   $('#start-validation').textContent = motionOnly ? '开始 5 分钟稳定性测试并录制' : '开始 5 分钟测试并录制';
   const recording = ['recording', 'stopping'].includes(snapshot.recording?.state);
   for (const id of ['validation-usb', 'validation-unworn', 'validation-proximity']) $(`#${id}`).disabled = active || recording;
@@ -184,32 +186,41 @@ function updateUi(view) {
   $('#power-status').hidden = !lan;
   const packet = snapshot?.frame ?? snapshot?.status, power = packet?.power;
   const powerOnline = browserConnected && snapshot?.transport_connected && !stoppedByUser;
-  $('#power-title').textContent = !powerOnline ? '软件保活 · 等待 App 连接' : !power ? '软件保活 · 当前 App 未上报' : power.request_blocked ? '软件保活请求被系统拒绝' : power.override_requested ? '软件保活请求已发送 · 效果待验证' : '软件保活 · 尚未请求';
+  $('#power-title').textContent = stoppedByUser ? '已请求结束服务 · 等待 App 释放保活' : !powerOnline ? '软件保活 · 等待 App 连接' : !power ? '软件保活 · 当前 App 未上报' : power.request_blocked ? '软件保活请求被系统拒绝' : power.override_requested ? '软件保活请求已发送 · 展开诊断' : '软件保活 · 尚未请求';
   $('#power-status').dataset.warning = String(!!power?.request_blocked);
+  if (power?.request_blocked) $('#power-status details').open = true;
   const flag = value => value === true ? '是' : value === false ? '否' : '未知';
-  $('#power-detail').textContent = powerOnline && power
+  $('#power-detail').textContent = stoppedByUser ? '电脑已发出结束请求；此页无法确认头显已休眠。App 在连接关闭或租约到期时请求释放保活，再由系统恢复原有休眠策略。' : powerOnline && power
     ? `屏幕交互 ${flag(power.interactive)} · 显示状态 ${power.display_state} · Android 前台 ${flag(packet.android_resumed)} · XR 运行 ${flag(packet.xr_running)} · 请求 ${power.request_count} 次${power.control_error ? ` · ${power.control_error}` : ''}。停止并保存后仍保留预览；结束服务才释放保活。`
-    : powerOnline ? '需安装 0.7.0 候选 App；旧版不会发送保活请求。' : '连接期间临时请求忽略佩戴感应器；不修改永久休眠设置。';
+    : powerOnline ? '采集 App 需支持保活租约；当前未收到电源状态。' : '连接期间临时请求忽略佩戴感应器；不修改永久休眠设置。';
   $('#rate-title').textContent = replay ? '回放帧率' : '采集频率';
   $('#source-badge').classList.toggle('replay', replay);
   $('#source-badge').textContent = replay ? '录制回放 · 非实时' : lan ? '本机 · LAN 直传' : wireless ? '本机 · Wi-Fi 实时' : '本机 · USB 实时';
   $('#render-label').textContent = replay ? '历史录制 / 非实时' : '实时空间姿态';
   $('#source-detail').textContent = replay ? `回放文件：${snapshot.source.name}` : lan ? 'OpenXR → 局域网 TLS → 录制 / 本地浏览器' : wireless ? 'OpenXR → Wi-Fi / ADB / TCP → 本地浏览器' : 'OpenXR → USB / TCP → 本地浏览器';
   const recording = snapshot?.recording;
-  const notice = $('#capture-notice'), testView = document.body.dataset.view === 'test';
-  notice.hidden = !snapshot?.controls?.can_record || replay;
-  const savingNow = ['recording', 'stopping'].includes(recording?.state);
-  notice.dataset.recording = String(savingNow);
-  $('#capture-notice-title').textContent = recording?.state === 'failed' ? '录制失败' : recording?.state === 'stopping' ? '正在保存' : savingNow ? '正在录制 · 数据写入本机' : '未在录制 · 实时动作不会保存';
-  $('#capture-notice-detail').textContent = savingNow ? `本次目录：${recording.directory}` : snapshot?.validation?.profile === 'motion_only' ? '下方是历史结果。本轮只轻动双手，点击稳定性测试并录制后再开始。' : '下方“上次录制”是历史结果。本轮需启动测试并录制，才能检查连续追踪与按键。';
-  $('#open-test-page').hidden = testView || !snapshot?.controls?.can_validate;
+  const testView = document.body.dataset.view === 'test';
+  const presentation = recordingPresentation(recording, { connected: browserConnected, stopped: stoppedByUser, error: captureError, testView });
+  $('.capture-deck').hidden = replay || (!!snapshot && !snapshot.controls?.can_record && !recording);
+  $('.capture-deck').dataset.state = presentation.state;
+  setText('#capture-notice-title', presentation.title);
+  setText('#capture-notice-detail', presentation.detail);
   $('#recording-bar').hidden = !recording;
   if (recording) {
     $('#recording-bar').dataset.failed = String(recording.state === 'failed');
-    $('#recording-status').textContent = recording.state === 'failed' ? '录制失败：' + recording.error : recording.state === 'complete' ? '已保存 · 实时预览未录制' : recording.state === 'idle' ? '实时预览 · 未录制' : recording.state === 'stopping' ? '正在保存…' : '正在录制 · 每秒落盘';
+    $('#recording-status').textContent = !browserConnected ? '最后收到的统计' : recording.state === 'failed' ? '保存失败' : recording.state === 'complete' ? '上段录制' : recording.state === 'idle' ? '等待新会话' : recording.state === 'stopping' ? '正在收尾' : '本段 · 每秒落盘';
     const recordingPrefix = ['recording', 'stopping'].includes(recording.state) ? '本次' : recording.directory ? '上次' : '尚未录制';
     $('#recording-count').textContent = `${recordingPrefix} ${recording.frames} 帧 · 双手 6DoF ${recording.dual_6dof_frames} 帧 · 缺失包 ${recording.missing_packets}`;
-    $('#recording-directory').textContent = recording.directory ?? '点击“开始新采集”创建独立会话';
+    $('#recording-directory').textContent = recording.directory ?? '每段录制保存到独立目录，标注不会修改原始数据。';
+    $('#recording-elapsed').textContent = formatRecordingDuration(recording.elapsed_s);
+    $('#recording-elapsed').setAttribute('aria-label', `已录时长 ${formatRecordingDuration(recording.elapsed_s)}`);
+    $('#recording-bytes').textContent = `原始数据 ${formatStorageBytes(recording.bytes)}`;
+  }
+  const storage = snapshot?.storage;
+  $('#storage-status').hidden = !storage;
+  if (storage) {
+    $('#storage-status').dataset.warning = String(storage.state !== 'ready');
+    $('#storage-status').textContent = storage.state === 'unknown' ? '暂不可读取磁盘容量，已暂停新建录制；现有录制状态见上方。' : `磁盘可用 ${formatStorageBytes(storage.available_bytes)} · 低于 ${formatStorageBytes(storage.reserve_bytes)} 自动停止并保存${storage.state === 'low' ? ' · 当前空间不足' : ''}`;
   }
   $('#connection-light').classList.toggle('connected', browserConnected && !!snapshot?.transport_connected);
   $('#connection-label').textContent = !browserConnected ? '本地服务未连接' : snapshot?.transport_connected ? '数据通道已连接' : replay ? '录制回放已结束' : '本地服务在线 · 等待采集端';
@@ -220,10 +231,11 @@ function updateUi(view) {
   const canRecord = !!snapshot?.controls?.can_record;
   const recordingActive = ['recording', 'stopping'].includes(recording?.state);
   $('#start-capture').hidden = !canRecord || recordingActive;
-  $('#start-capture').disabled = captureBusy || !browserConnected;
+  $('#start-capture').textContent = recording?.state === 'complete' ? '再录一段' : '开始录制';
+  $('#start-capture').disabled = captureBusy || !browserConnected || stoppedByUser || (!!storage && storage.state !== 'ready');
   $('#stop-session').hidden = canRecord ? !recordingActive : !snapshot?.controls?.can_stop;
   if (canRecord) {
-    $('#stop-session').disabled = captureBusy || recording?.state === 'stopping' || !browserConnected;
+    $('#stop-session').disabled = captureBusy || recording?.state === 'stopping' || !browserConnected || stoppedByUser;
     $('#stop-session').textContent = recording?.state === 'stopping' ? '正在保存…' : '停止并保存';
   }
   for (const step of startupSteps(snapshot, view)) {
@@ -232,7 +244,7 @@ function updateUi(view) {
     element.querySelector('span').textContent = step.label;
   }
   $('#startup-detail').textContent = managed ? `阶段：${snapshot.startup.phase}\n启动尝试：${snapshot.startup.launch_attempts ?? 0} / 3\n${snapshot.startup.detail ? `最近一次诊断：${snapshot.startup.detail}` : ''}` : '';
-  if (stoppedByUser) { $('#status-title').textContent = '本次采集已停止'; $('#status-hint').textContent = `可以关闭此页面；下次双击 ${lan ? 'Start-Quest-LAN.cmd' : 'Start-Quest.cmd'} 即可重新启动。`; $('#connection-label').textContent = '本次采集已停止'; }
+  if (stoppedByUser) { $('#status-title').textContent = '服务已结束'; $('#status-hint').textContent = `可以关闭此页面；下次双击 ${lan ? 'Record-Quest.cmd' : 'Start-Quest.cmd'} 即可重新启动。`; $('#connection-label').textContent = '服务已结束'; }
   for (const side of ['left', 'right']) updateCard(side, view[side]);
   if (scene) {
     const empty = !view.left.visible && !view.right.visible;

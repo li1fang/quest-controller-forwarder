@@ -1,7 +1,7 @@
 import { createCaptureSession } from './capture-session.mjs';
 
 /** Transport/preview lifetime is independent of each immutable recording session. */
-export function createLanCaptureController({ hub, root, source, makeSession = createCaptureSession, initialRecording, log = () => {} }) {
+export function createLanCaptureController({ hub, root, source, makeSession = createCaptureSession, initialRecording, beforeStart = () => {}, log = () => {} }) {
   let active = null, producer = null, operation = Promise.resolve(), shuttingDown = false, generation = 0;
   let last = initialRecording ?? { state: 'idle', frames: 0, packets: 0, dual_6dof_frames: 0, missing_packets: 0, directory: null };
   hub.recording(last); hub.phase('preview');
@@ -9,9 +9,10 @@ export function createLanCaptureController({ hub, root, source, makeSession = cr
   function publish(value) { last = value; hub.recording(value); }
   const controller = {
     status: () => active?.status() ?? last,
-    start(context = {}) { return enqueue(() => {
+    start(context = {}) { return enqueue(async () => {
       if (shuttingDown) throw new Error('LAN service is shutting down');
       if (active) return active.status();
+      await beforeStart();
       const current = ++generation;
       try {
         active = makeSession({ root, source: { ...source, ...(context.validation ? { validation: context.validation } : {}) },

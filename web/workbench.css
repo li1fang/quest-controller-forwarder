@@ -1,0 +1,85 @@
+/* Shared workbench chrome; the original spatial view and hand telemetry stay intact. */
+:root { --line:#2b3b4c; --muted:#94a6b9; --left:#6dd9ee; --right:#b5a1ff; --good:#8bdfb3; --warning:#efbf77; --mono:"Cascadia Code",Consolas,monospace; }
+[hidden] { display:none!important; }
+body { max-width:1920px; margin:0 auto; background:radial-gradient(ellipse at 20% 0%,#16253888,transparent 48%); }
+button:disabled { opacity:.45; cursor:not-allowed; }
+a:focus-visible,summary:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible { outline:2px solid var(--left); outline-offset:4px; }
+.app-header { min-height:92px; height:auto; padding:20px 0; margin:0; }
+.app-header h1 { font-size:23px; font-weight:600; line-height:1.2; margin:0; }
+.app-header .eyebrow { font-size:10px; letter-spacing:2px; margin-bottom:7px; color:#9aafc4; }
+.app-header .version { font:10px var(--mono); color:#8ba0b8; margin-left:13px; }
+.workspace-nav { position:relative; display:flex; align-items:center; flex-wrap:wrap; gap:8px 24px; border-bottom:1px solid var(--line); margin-bottom:18px; min-height:43px; font-size:13px; }
+.workspace-nav>a { display:flex; align-items:center; gap:10px; padding:12px 0; color:var(--muted); text-decoration:none; border-bottom:2px solid transparent; }
+.workspace-nav>a:hover { color:#e5f8ff; }
+.workspace-nav>a[aria-current=page] { color:var(--left); border-color:var(--left); }
+.workspace-nav>a span { font:9px var(--mono); letter-spacing:1px; opacity:.7; }
+.workflow-help { position:relative; margin-left:auto; color:var(--muted); font-size:12px; }
+.workflow-help summary { cursor:pointer; padding:10px 0; }
+.workflow-help>div { position:absolute; right:0; top:100%; z-index:12; width:min(390px,calc(100vw - 48px)); padding:18px; background:#13202e; border:1px solid #42556a; border-radius:10px; box-shadow:0 12px 35px #0008; line-height:1.8; }
+.workflow-help strong { color:#e1edf9; font-size:13px; }
+.workflow-help p { margin:9px 0 0; }
+.workflow-help code { color:var(--left); overflow-wrap:anywhere; }
+.capture-deck { border:1px solid var(--line); border-radius:12px; background:linear-gradient(110deg,#152637,#111c2a 65%); margin-bottom:14px; overflow:hidden; }
+.capture-command { display:flex; align-items:center; justify-content:space-between; gap:20px; padding:20px 22px; border-left:3px solid #536a82; }
+.capture-deck[data-state=recording] .capture-command { border-color:#fb939b; }
+.capture-deck[data-state=complete] .capture-command { border-color:var(--good); }
+.capture-deck[data-state=warning] .capture-command,.capture-deck[data-state=stopping] .capture-command { border-color:var(--warning); }
+.capture-deck .capture-notice { display:flex; flex-direction:column; flex-wrap:nowrap; align-items:flex-start; gap:8px; padding:0; border:0; background:transparent; color:#e1eaf5; min-width:0; }
+.capture-notice>.eyebrow { margin:0; color:#91a6bc; font:10px var(--mono); letter-spacing:1.4px; }
+#capture-notice-title { font-size:19px; font-weight:600; line-height:1.4; }
+#capture-notice-detail { color:#a5b6c9; font-size:12px; line-height:1.7; max-width:850px; }
+.capture-deck[data-state=recording] #capture-notice-title { color:#ffbac0; }
+.capture-deck[data-state=complete] #capture-notice-title { color:var(--good); }
+.capture-deck[data-state=warning] #capture-notice-title { color:var(--warning); }
+.capture-actions { display:flex; gap:10px; flex-shrink:0; }
+.capture-actions button { padding:12px 21px; font-size:14px; min-width:142px; font-weight:600; }
+#start-capture { background:#79d7e8; color:#0a2431; border-color:#9ce6f3; box-shadow:0 0 20px #6dd9ee12; }
+#start-capture:hover:not(:disabled) { background:#a0e8f2; }
+#stop-session { background:#39262e; border-color:#a36976; color:#ffced3; }
+.capture-deck .recording-bar { background:#0e192680; padding:13px 22px; gap:8px 22px; border-top:1px solid var(--line); color:#a7bfd1; }
+.capture-deck .recording-bar[data-failed=true] { background:#362229; color:#ffc0c0; }
+#recording-elapsed { order:-1; font:23px var(--mono); color:#e4f4ff; }
+#recording-elapsed::before { content:'已录 '; font:10px var(--mono); color:#94a6b9; }
+#recording-bytes { color:#a9bdcf; font-family:var(--mono); }
+#recording-status { font-size:11px; font-weight:500; }
+#recording-count { font:11px var(--mono); }
+#recording-directory { flex-basis:100%; color:#8fa7be; font:10px var(--mono); overflow-wrap:anywhere; }
+.capture-deck .storage-status { margin:0; padding:8px 22px; border-top:1px solid #253747; font-size:11px; }
+.status-bar { margin:0; }
+.power-status { margin:10px 0 0; padding:8px 14px; border-color:#26394a; border-radius:8px; align-items:center; justify-content:space-between; gap:10px 18px; background:#0e1923; }
+.power-status details { flex:1; min-width:200px; }
+.power-status summary { cursor:pointer; font-size:11px; color:#a6bfd0; }
+.power-status p { margin:10px 0 3px; color:#92a6bb; font-size:11px; line-height:1.8; }
+#end-service { padding:7px 10px; font-size:11px; background:transparent; border-color:#3b4e60; color:#afc0d1; }
+.validation-panel { margin:14px 0 0; }
+.workspace,.managed-startup .workspace { height:auto; min-height:0; align-items:stretch; }
+.scene-panel { min-height:660px; }
+.vector-detail,.stick-values,.touch,.scene-footnote,.app-footer { color:#8ea5bb; }
+.scene-panel,.hand-card,.annotation-workspace .panel { box-shadow:0 8px 28px #0002; }
+.annotation-workspace { padding:0 26px 24px; max-width:1920px; }
+.annotation-workspace .session-strip { border-color:var(--line); background:linear-gradient(110deg,#162839,#111c2a); }
+.annotation-workspace .viewport { height:clamp(300px,36vh,440px); }
+.annotation-workspace .panel { background:#101b28; border-color:var(--line); }
+.annotation-workspace button.primary { background:#234855; color:#c0f3fa; border-color:#477e90; }
+.annotation-workspace #save-annotation { background:#79d7e8; border-color:#9ce6f3; color:#0a2431; font-weight:600; }
+.annotation-workspace .storage-note { color:#9ab0c3; }
+.annotation-workspace .left-text,.annotation-workspace .right-text { font:12px var(--mono); letter-spacing:1px; }
+.annotation-workspace #message { min-height:40px; line-height:1.6; }
+@media(max-width:1000px) { .capture-command { padding:17px; gap:16px; } .capture-actions button { min-width:125px; } .annotation-workspace { padding:0 16px 20px; } }
+@media(max-width:800px) { .scene-panel { min-height:520px; } .workspace-nav { gap:8px 18px; } .power-status details { min-width:170px; } }
+@media(max-width:600px) {
+  .capture-command { align-items:stretch; flex-direction:column; gap:14px; }
+  .capture-actions button { flex:1; min-height:44px; }
+  .capture-deck .recording-bar { padding:12px 16px; gap:9px 14px; }
+  .capture-deck .storage-status { padding:8px 16px; }
+  #capture-notice-title { font-size:17px; }
+  .workspace-nav { font-size:12px; gap:7px 17px; }
+  .workspace-nav>a span { display:none; }
+  .workflow-help { margin-left:0; position:static; }
+  .workflow-help>div { right:auto; left:0; }
+  .power-status { align-items:flex-start; flex-direction:column; }
+  .scene-panel { min-height:470px; }
+  .annotation-workspace .app-header { gap:14px; }
+  .annotation-workspace .header-actions { flex-wrap:wrap; font-size:11px; }
+}
+@media(prefers-reduced-motion:reduce) { *,*::before,*::after { transition:none!important; animation:none!important; } }

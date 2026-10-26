@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import readline from 'node:readline';
 import { inspectSession } from './inspect-session.mjs';
+export { openAnnotationSession } from './annotation-index.mjs';
 
 const tracked = (p, side) => { const h = p[side]; return !!(p.focused && h.pose_active && h.position_valid && h.position_tracked && h.orientation_valid && h.orientation_tracked); };
 /** Indexed, verified recorded frames. No receiver, device connection or rewritten timestamps. */
