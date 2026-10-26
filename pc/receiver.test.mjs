@@ -93,15 +93,15 @@ test('CLI rejects missing values, unknown flags, and invalid durations', () => {
   assert.equal(parseOptions(['--json', '--duration', '3']).duration, 3);
 });
 
-test('real TCP receiver records only validated packets and accepts a new connection after disconnect', async t => {
+test('real TCP receiver records only validated packets and accepts a new connection after disconnect', { timeout: 10000 }, async t => {
   const directory = await fs.mkdtemp(path.join(os.tmpdir(), 'quest-usb-test-'));
-  t.after(() => removeTestDirectory(directory));
+  let receiver;
+  t.after(async () => { await receiver?.close(); await removeTestDirectory(directory); });
   const recording = path.join(directory, 'capture.jsonl');
   const packets = [], errors = [];
   let notify;
   const nextPacket = () => new Promise(resolve => { notify = resolve; });
-  const receiver = await createReceiver({ port: 0, record: recording, onPacket: packet => { packets.push(packet); notify?.(); }, onError: error => errors.push(error) });
-  t.after(() => receiver.close());
+  receiver = await createReceiver({ port: 0, record: recording, onPacket: packet => { packets.push(packet); notify?.(); }, onError: error => errors.push(error) });
   let socket = net.connect(receiver.port, '127.0.0.1');
   await once(socket, 'connect');
   let arrival = nextPacket();
@@ -118,9 +118,24 @@ test('real TCP receiver records only validated packets and accepts a new connect
   arrival = nextPacket(); socket.write(JSON.stringify(sample(2)) + '\n'); await arrival;
   socket.end(); await once(socket, 'close');
   assert.equal(errors.length, 0);
-  await new Promise(resolve => setTimeout(resolve, 20));
+  await receiver.close();
   const lines = (await fs.readFile(recording, 'utf8')).trim().split('\n').map(JSON.parse);
   assert.deepEqual(lines.map(packet => packet.sequence), [1, 2]);
+});
+
+test('receiver close waits for delayed stream resource release and is idempotent', { timeout: 5000 }, async t => {
+  const directory = await fs.mkdtemp(path.join(os.tmpdir(), 'quest-usb-test-'));
+  let receiver, released = false;
+  t.after(async () => { await receiver?.close(); await removeTestDirectory(directory); });
+  receiver = await createReceiver({ port: 0, record: path.join(directory, 'memory.jsonl') }, {
+    createRecording() {
+      const output = new Writable({ write(chunk, encoding, callback) { callback(); },
+        destroy(error, callback) { setTimeout(() => { released = true; callback(error); }, 30); } });
+      queueMicrotask(() => output.emit('open')); return output;
+    },
+  });
+  await Promise.all([receiver.close(), receiver.close()]);
+  assert.equal(released, true);
 });
 
 test('an existing recording is preserved', async t => {

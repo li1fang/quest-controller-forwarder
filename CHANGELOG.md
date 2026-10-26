@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Portable Node test enumeration for Windows Node 20; receiver shutdown now waits for actual stream resource closure and is idempotent.
+
 - Offline annotation workspace: verified replay, pause/step/seek, speed and interval controls, free-text hand-specific labels, editing and recoverable deletion.
 - Labels persist separately with source hashes and coordinate/quality references; originals are not rewritten.
 - MIT license, retained dependency notices, setup/contribution/security docs, Node CI configuration, and clean source export tooling.

@@ -2,6 +2,7 @@ import net from 'node:net';
 import fs from 'node:fs';
 import path from 'node:path';
 import { StringDecoder } from 'node:string_decoder';
+import { finished } from 'node:stream/promises';
 import { pathToFileURL } from 'node:url';
 
 export const DEFAULT_PORT = 19427;
@@ -81,7 +82,7 @@ export function createLineParser(onPacket, onError = () => {}, maxBytes = 256 * 
 
 export async function createReceiver({ port = DEFAULT_PORT, record, onPacket = () => {}, onConnection = () => {}, onDisconnect = () => {}, onError = () => {} } = {}, { createRecording = fs.createWriteStream } = {}) {
   const clients = new Set();
-  let recording;
+  let recording, closing;
   if (record) {
     fs.mkdirSync(path.dirname(path.resolve(record)), { recursive: true });
     // Never overwrite an existing recording.
@@ -122,13 +123,16 @@ export async function createReceiver({ port = DEFAULT_PORT, record, onPacket = (
   server.on('error', onError);
   return {
     port: server.address().port,
-    async close() {
+    close() { return closing ??= (async () => {
       for (const client of clients) client.destroy();
       await new Promise(resolve => server.close(resolve));
-      if (recording && !recording.destroyed) await new Promise((resolve, reject) => {
-        recording.once('error', reject); recording.end(resolve);
-      });
-    },
+      if (recording) {
+        // A writable's finish callback can precede OS file-handle closure.
+        const complete = finished(recording, { cleanup: true });
+        if (!recording.writableEnded && !recording.destroyed) recording.end();
+        await complete;
+      }
+    })(); },
   };
 }
 
