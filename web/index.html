@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>Quest / 手柄观测台</title>
+  <link rel="stylesheet" href="/style.css">
+  <script type="importmap">{"imports":{"three":"/vendor/three.module.js","three/addons/controls/OrbitControls.js":"/vendor/OrbitControls.js"}}</script>
+  <script type="module" src="/app.js"></script>
+</head>
+<body>
+  <header class="app-header">
+    <div class="brand">
+      <svg width="40" height="40" viewBox="0 0 40 40" fill="none" aria-hidden="true"><rect x="1" y="1" width="38" height="38" rx="12" stroke="#354456"/><path d="M12 23V17a8 8 0 0 1 16 0v6M12 23l3 7m13-7-3 7M12 17h16" stroke="#b7dded" stroke-width="2" stroke-linecap="round"/><circle cx="16" cy="20" r="1.4" fill="#6dd9ee"/><circle cx="24" cy="20" r="1.4" fill="#b7a5fb"/></svg>
+      <div><div class="eyebrow">QUEST / CONTROL ROOM</div><h1>手柄观测台<span class="version">01</span></h1></div>
+    </div>
+    <div class="header-readouts">
+      <div class="readout"><span id="rate-title">采集频率</span><strong id="frame-rate">—<small> Hz</small></strong></div>
+      <div class="readout"><span>数据帧龄</span><strong id="frame-age">—<small> ms</small></strong></div>
+      <div id="source-badge" class="source-badge">本机 · USB 实时</div>
+      <button id="start-capture" class="stop-session" hidden>开始新采集</button>
+      <button id="stop-session" class="stop-session" hidden>停止本次采集</button>
+      <button id="end-service" class="stop-session" hidden>结束服务并释放保活</button>
+    </div>
+  </header>
+
+  <div id="capture-notice" class="capture-notice" hidden role="status"><strong id="capture-notice-title">未在录制</strong><span id="capture-notice-detail">实时动作不会自动保存。</span><a id="open-test-page" href="/test">打开正式测试与录制</a></div>
+
+  <div class="status-bar" id="status-bar" data-tone="muted" role="status" aria-live="polite">
+    <span class="status-dot"></span><strong id="status-title">等待数据通道</strong>
+    <span id="status-hint">请在电脑启动 USB 采集；头显可保持开机放在旁边。</span>
+    <span class="status-session" id="session-label">XR —</span>
+  </div>
+
+  <div class="startup-progress" id="startup-progress" hidden aria-label="启动检查进度">
+    <div data-step="usb"><i></i><span>USB / ADB</span></div><b>›</b>
+    <div data-step="app"><i></i><span>采集 App</span></div><b>›</b>
+    <div data-step="hands"><i></i><span>手柄唤醒</span></div><b>›</b>
+    <div data-step="tracking"><i></i><span>6DoF 定位</span></div>
+    <details id="startup-diagnostics"><summary>启动诊断</summary><pre id="startup-detail"></pre></details>
+  </div>
+
+  <div class="recording-bar" id="recording-bar" hidden role="status"><strong id="recording-status"></strong><span id="recording-count"></span><code id="recording-directory"></code></div>
+  <div id="power-status" class="power-status" hidden role="status"><strong id="power-title"></strong><span id="power-detail"></span></div>
+  <details id="validation-panel" class="validation-panel" open hidden>
+    <summary id="validation-summary">本轮检查 · 不戴头显 / USB 拔线 / 双手 6DoF 与按键</summary>
+    <p id="validation-mode-note"></p>
+    <div class="validation-setup">
+      <label><input id="validation-usb" type="checkbox">电脑 USB 已拔掉</label>
+      <label><input id="validation-unworn" type="checkbox">头显已摘下并放好</label>
+      <label>内侧佩戴感应器 <select id="validation-proximity" aria-label="内侧佩戴感应器"><option value="">请选择实际状态</option><option value="uncovered">未遮挡（本轮目标）</option><option value="covered">已遮挡（如实记录）</option></select></label>
+      <button id="start-validation">开始 5 分钟测试并录制</button>
+    </div>
+    <div class="validation-progress"><strong id="validation-timer">05:00</strong><div><strong id="validation-status">等待开始</strong><p id="validation-hint">打开 App 后再摘下头显；双手追踪稳定 2 秒后自动计时，结束自动保存。</p></div></div>
+    <progress id="validation-progress" max="300" value="0" aria-label="五分钟测量进度"></progress>
+    <div class="validation-coverage"><div><strong>左手 · 都要拿起测试</strong><div id="validation-left"></div></div><div><strong>右手 · 都要拿起测试</strong><div id="validation-right"></div></div></div>
+    <p id="validation-metrics">未覆盖的项目会保持灰色；覆盖状态只来自本次测量，不沿用上一轮。</p>
+  </details>
+  <main class="workspace">
+    <section class="scene-panel" aria-label="左右手柄三维姿态">
+      <div class="panel-toolbar">
+        <div><span class="section-number">01</span><h2>空间视图</h2><span class="space-tag">LOCAL / 米</span></div>
+        <div class="view-buttons"><button id="frame-hands" title="将镜头对准当前有效的手柄">对准手柄</button><button id="reset-view" title="恢复默认镜头">复位视角</button></div>
+      </div>
+      <div class="viewport" id="viewport">
+        <div class="viewport-corner top-left"><span class="legend-dot left"></span>左手<span class="legend-dot right"></span>右手</div>
+        <div class="viewport-corner top-right" id="render-label">实时空间姿态</div>
+        <div class="empty-state" id="empty-state"><div class="empty-orbit"><span></span><i></i></div><h3 id="empty-title">等待手柄数据</h3><p id="empty-hint">连接就绪后，双手的位置与方向会显示在这里。</p></div>
+        <div class="viewport-corner bottom-left"><span class="axis-x">X</span> 向右 <span class="axis-y">Y</span> 向上 <span class="axis-z">−Z</span> 向前</div>
+        <div class="viewport-corner bottom-right">拖动旋转 · 滚轮缩放 · 右键平移</div>
+      </div>
+      <div class="scene-options">
+        <label><input type="checkbox" id="show-trails" checked><span>运动轨迹</span></label>
+        <label><input type="checkbox" id="show-velocity" checked><span>速度矢量</span></label>
+        <label><input type="checkbox" id="show-axes" checked><span>姿态坐标轴</span></label>
+        <span class="scale-note">网格 0.25 m · 速度箭头 = v × 0.15 s</span>
+      </div>
+      <div class="scene-footnote"><span class="tiny-square"></span>坐标原点来自当前 XR 会话；Y = 0 参考平面不代表地板。</div>
+    </section>
+
+    <aside class="hand-panels" aria-label="实时手柄数值与输入状态">
+      <div id="left-panel"></div><div id="right-panel"></div>
+    </aside>
+  </main>
+  <footer class="app-footer"><span><span class="connection-light" id="connection-light"></span><span id="connection-label">连接本地服务中</span></span><span id="source-detail">OpenXR → USB / TCP → 本地浏览器</span><span id="sequence-label">FRAME —</span></footer>
+
+  <template id="hand-template">
+    <section class="hand-card">
+      <div class="hand-heading"><div class="hand-name"><span class="hand-letter"></span><div><h2></h2><span class="controller-name">TOUCH PRO</span></div></div><span class="tracking-badge" data-tone="muted">无有效输入</span></div>
+      <div class="position-section"><div class="field-title">位置 <span>m</span></div><div class="vector-grid position-values"><div><span>X</span><strong>—</strong></div><div><span>Y</span><strong>—</strong></div><div><span>Z</span><strong>—</strong></div></div></div>
+      <div class="quaternion-section"><div class="field-title">旋转 <span>xyzw</span></div><div class="quaternion-values">— &nbsp; — &nbsp; — &nbsp; —</div></div>
+      <div class="speed-grid"><div><div class="field-title">线速度 <span>m/s</span></div><strong class="linear-speed">—</strong><span class="vector-detail linear-vector">—</span></div><div><div class="field-title">角速度 <span>rad/s</span></div><strong class="angular-speed">—</strong><span class="vector-detail angular-vector">—</span></div></div>
+      <div class="input-section"><div class="analog-bars"><div class="axis-input"><div><span>扳机</span><strong class="trigger-value">—</strong></div><div class="meter"><i class="trigger-fill"></i></div></div><div class="axis-input"><div><span>握把</span><strong class="squeeze-value">—</strong></div><div class="meter"><i class="squeeze-fill"></i></div></div></div><div class="stick-section"><div class="stick" aria-label="摇杆位置"><span class="stick-dot"></span></div><span class="stick-values">— / —</span></div></div>
+      <div class="button-section"><span class="field-title">按键</span><div class="buttons"></div></div>
+      <div class="touch-section"><span class="touch" data-button="trigger_touch">扳机触摸</span><span class="touch" data-button="thumbrest_touch">拇指台</span><span class="touch" data-button="thumbstick_touch">摇杆触摸</span></div>
+    </section>
+  </template>
+</body>
+</html>

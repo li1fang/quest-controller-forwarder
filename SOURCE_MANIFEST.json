@@ -1,0 +1,450 @@
+{
+  "schema": "quest-public-source-v1",
+  "license": "MIT",
+  "files": [
+    {
+      "file": ".gitattributes",
+      "sha256": "341234d5a4c858334111206f3e2d6194a5dd52c224904f4212e4e33360e03b03"
+    },
+    {
+      "file": ".github/PULL_REQUEST_TEMPLATE.md",
+      "sha256": "5182e1856c0e5e3d829e7c798d1115a8416f475a522cc70906fc5baf41267a3f"
+    },
+    {
+      "file": ".github/workflows/tests.yml",
+      "sha256": "53e723c031a4a64508b6e47826e947a291bc5202807e40c1b2599d097c5e642e"
+    },
+    {
+      "file": ".gitignore",
+      "sha256": "0b6f88bb5209a1a5e8f118d45e04c91a9f7c532472d2ee5deba0914f09161a7e"
+    },
+    {
+      "file": "Allow-Quest-LAN.cmd",
+      "sha256": "6fcb6b4406bf2e1e4dedbb683ae3fb223d970160ff98a2602cda89a76b4de071"
+    },
+    {
+      "file": "Annotate-Quest.cmd",
+      "sha256": "5b0e1a675a2e52a47d19f9eece702f00a6fafd849454457809415023b5e06cf6"
+    },
+    {
+      "file": "CHANGELOG.md",
+      "sha256": "80b3df4be6957992b2f78971d734eb9c05d9b46dd6e0c3dae8f9505a26d14f0b"
+    },
+    {
+      "file": "CMakeLists.txt",
+      "sha256": "073df85907612111daa7521baa80b0615d7a7b7f965c17cf3e7d775fb3da4596"
+    },
+    {
+      "file": "CONTRIBUTING.md",
+      "sha256": "98dcf595c54510511b8c18bb5dd39b90764f09a49f9b646b93997f00a3646539"
+    },
+    {
+      "file": "Forget-Quest-PIN.cmd",
+      "sha256": "0ec9ed934cc16d939e74421d40c576e1eadddf64c82201daea8fb7f59ceba6f0"
+    },
+    {
+      "file": "LICENSE",
+      "sha256": "359cb89df78144eb82b6bd779751c2a5fa7c8a333f56a95516e51564f041ffe4"
+    },
+    {
+      "file": "README.md",
+      "sha256": "19d17d44762a2978342bf9b23efa4dbb11fc5780eeafe34eeb49d35eb0916857"
+    },
+    {
+      "file": "Restore-Quest-Dialogs.cmd",
+      "sha256": "e9f65a6603803c585a4065eeb5eab5e03307113a8893abe7cd844b7c907495b2"
+    },
+    {
+      "file": "SECURITY.md",
+      "sha256": "bafefe713883d245a2c1a4c1859eb3f55f3ed67414376f1641d4be016d01d4e6"
+    },
+    {
+      "file": "Start-Quest-LAN-Preview.cmd",
+      "sha256": "0f2ee3b39d473658d62ee91cbe1b53f094be34d97a4490b9af1016fd30be52d5"
+    },
+    {
+      "file": "Start-Quest-LAN.cmd",
+      "sha256": "d605bd4820482512df630dacac5aaef4bdabba3beeecc90c6eabbcb18c7f38e2"
+    },
+    {
+      "file": "Start-Quest-NoDialogs.cmd",
+      "sha256": "613abe092100122d32875ac80141891484ca2b55855e88d3b608cbac95cfc181"
+    },
+    {
+      "file": "Start-Quest.cmd",
+      "sha256": "eca19ed0d4fd150cbc8c036c4bfac00266f8e9892811544c9bc4e372a0f9f2d6"
+    },
+    {
+      "file": "Stop-Quest.cmd",
+      "sha256": "c7cea638e744e0e64b0b5268ea0c5997e996400d4a5aff5d22cce1f1d80f6754"
+    },
+    {
+      "file": "THIRD_PARTY_NOTICES.md",
+      "sha256": "ec08aa10bd5863b97f271cd721e49de12a74888d5aa28cd6a29bf67c61db7b23"
+    },
+    {
+      "file": "Test-Quest-Dialogs.cmd",
+      "sha256": "da10543b5808a8220268df5160be128357fe0c103a8010b7fd77c0aface706e4"
+    },
+    {
+      "file": "app/AndroidManifest.xml",
+      "sha256": "eaa4ef73339c7e012d3940b53c965c95783ec9af23c013f029f139553b64780c"
+    },
+    {
+      "file": "app/java/dev/quest/usbforwarder/LanTransport.java",
+      "sha256": "b39bb6431dfefc2b6426f3c26c485e789f26664b4f92b90e1abea264fc8f7ec7"
+    },
+    {
+      "file": "app/java/dev/quest/usbforwarder/ProximityControl.java",
+      "sha256": "1ae174346487170508a9a981398a197251fe3e9d4363d3d6d4514e7dc0eb2d13"
+    },
+    {
+      "file": "app/java/dev/quest/usbforwarder/ProximityLease.java",
+      "sha256": "ce6de6d9fd99027bf671d9e781cbff7ea19442d76a39861d970ac0398041f95c"
+    },
+    {
+      "file": "app/main.cpp",
+      "sha256": "ce9b08b1013f0daf6a8e2d004ac1699fcbb710495182c5386d3bde4e69e7c316"
+    },
+    {
+      "file": "diagnostics/AdbXmlParserProbe.java",
+      "sha256": "4b42e5757f9e4e330f2d50a7eabcd2b40996a4129bc00804c8d575fbf3417dba"
+    },
+    {
+      "file": "diagnostics/LanTlsProbe.java",
+      "sha256": "ab4403e4e6563f84354a65a2f1e01df5fdd5dfd0ac5422ecb4a9611d4d9c1bfc"
+    },
+    {
+      "file": "diagnostics/ProximityLeaseTest.java",
+      "sha256": "5fd3ade64b4b442e81368e98d69a0102d77497d4eada4e938b0afe0d09a18e0b"
+    },
+    {
+      "file": "docs/annotation-use.md",
+      "sha256": "201e4d5b92529ef45b023ec3571cfaf32f35586e0b04a5fdae20f207e7ca6c09"
+    },
+    {
+      "file": "docs/build.md",
+      "sha256": "068390925fe937e85cf8f52ee003706a800a5ac9f07f7665e8f9637433ca871d"
+    },
+    {
+      "file": "docs/daily-use.md",
+      "sha256": "fe92f4776002cf31c662991073b7e74eaa6ab3c190e083c94a2009e20452f43a"
+    },
+    {
+      "file": "docs/protocol.md",
+      "sha256": "f1475c8ef6f0d07e6bc068ed66ed3cdd1124d659b0e0f4d70968e72b571dc47d"
+    },
+    {
+      "file": "docs/validation.md",
+      "sha256": "a27420fabafbaf1e9863c7a8312ebacfb979fea288ec300a38cb76c2cc8373d4"
+    },
+    {
+      "file": "package.json",
+      "sha256": "c08044981ced419004b095b44858617fdb122efb58550596337c3d1fa1075130"
+    },
+    {
+      "file": "pc/adb-client.mjs",
+      "sha256": "bd260e597ea408076c3bceb1f333d937923e256cfb6cb97195d0c32c5f320444"
+    },
+    {
+      "file": "pc/analyze-session.mjs",
+      "sha256": "c06308381c551a0d15bebca9015ff5fab250e465906a44f8d605db4204c5a1e0"
+    },
+    {
+      "file": "pc/annotate-session.mjs",
+      "sha256": "86f8f40004dc8c8dbc2cf8ada934bf7eeea84d0d7fbd27f305bedc1e9df6ff99"
+    },
+    {
+      "file": "pc/annotation-server.mjs",
+      "sha256": "fb3dad9946a90f2caadd12d5d7409bbe2a11033d58ec5873cd701a6d7761eb5b"
+    },
+    {
+      "file": "pc/annotation-session.mjs",
+      "sha256": "0adc732463f57183fc05b8daff9674dfd8c54f1a0662c31705a9f601a8319168"
+    },
+    {
+      "file": "pc/annotation.test.mjs",
+      "sha256": "75bce9d433cc418bc8b49272555648bc64465e21c37f707ab46ad9ab2c6b2bc4"
+    },
+    {
+      "file": "pc/capture-session.mjs",
+      "sha256": "fc07ca52a535bb17921a8f7ffbb775447a455fa46f60644d999d03e016bc2660"
+    },
+    {
+      "file": "pc/headless-validation.mjs",
+      "sha256": "819c71cce97e1b6cac9fc799960140fe93122974742b18ca4c1e05c5edd22991"
+    },
+    {
+      "file": "pc/headless-validation.test.mjs",
+      "sha256": "0d7447562b6d3cb12006cff9846557143faff2ea6e5b710fc5982a95e53405cc"
+    },
+    {
+      "file": "pc/inspect-recording.mjs",
+      "sha256": "58f89d4266e3a15a3cad9b6100070715c91876140221d9ddc8d17bae374dddcf"
+    },
+    {
+      "file": "pc/inspect-session.mjs",
+      "sha256": "d5ed70b0d579a1d9306df202f3dd070a532677f016184f60b703162981f17f01"
+    },
+    {
+      "file": "pc/lan-capture-controller.mjs",
+      "sha256": "28e73b170e4695e09ec8983082b81e159ee50ab20054f47055f0925ce367d4c5"
+    },
+    {
+      "file": "pc/lan-capture.test.mjs",
+      "sha256": "2527a37dca24b5a8f74c7c1181b272381feed008cfa0ce3839d581540978d699"
+    },
+    {
+      "file": "pc/lan-receiver.mjs",
+      "sha256": "09fc0b7d99c03c32ef401db21b1e5b473c99642917bb4df426ac03b52f6cb91a"
+    },
+    {
+      "file": "pc/launch-config.mjs",
+      "sha256": "d5c175a1205ce634652f366847b50eb951a8cb3205f37d389bea5450daf35308"
+    },
+    {
+      "file": "pc/launch-options.mjs",
+      "sha256": "25d2237739017bbd2816dde65b64c953f3c15d270b2ea09e768a53dd66f0742c"
+    },
+    {
+      "file": "pc/prepare-lan.mjs",
+      "sha256": "8797af50834b75afa2004dfebc5b174419616579e9cc042823ce6a2d7f61f9eb"
+    },
+    {
+      "file": "pc/probe-lan.mjs",
+      "sha256": "601d1a1b45d05248086047f9f16e010ff383bc29a3ee0371bb62a70e6fb7f1a1"
+    },
+    {
+      "file": "pc/proximity-control.test.mjs",
+      "sha256": "d6f12514f8c056f0a2d0afcca01982181c30648a5544c2535be542bd6ae832ba"
+    },
+    {
+      "file": "pc/public-export.test.mjs",
+      "sha256": "2b4678ab77f3e37986d37b2d3db0af8bb277a6631bdf053e771e3a505bcb1f5a"
+    },
+    {
+      "file": "pc/receiver.mjs",
+      "sha256": "16a5829e4954c1791b4631c7d8150fcdf75e39c4afd26e67f4d17f5543f0bf59"
+    },
+    {
+      "file": "pc/receiver.test.mjs",
+      "sha256": "e47d41b8f5cccba3fc94dcafa4161e11e7daacc397e6a8aa0bafc2cf096357f2"
+    },
+    {
+      "file": "pc/start-lan.mjs",
+      "sha256": "a99d2d04308c26260db9a406337b62d62b194a3db69155244ea378c2ad05b396"
+    },
+    {
+      "file": "pc/start.mjs",
+      "sha256": "b1ae03a2273fc2d7ff3df4cafa6fd2a63db1d002f937555886b636129573f95f"
+    },
+    {
+      "file": "pc/startup.mjs",
+      "sha256": "d1eeb8b0d9a9d7ddd24d870c0ba7a5f178eae0eccd0d0a98c7b3786b2cf13dae"
+    },
+    {
+      "file": "pc/startup.test.mjs",
+      "sha256": "50306d565b39c25a03b3fcf707877214e3e0b79dd99a0f0295cb57abff24bd84"
+    },
+    {
+      "file": "pc/usb.mjs",
+      "sha256": "45919b5bae96706ad9725bf0b34ac02b386e6a1218cbc1530758847a2c7a68a2"
+    },
+    {
+      "file": "pc/viewer-server.mjs",
+      "sha256": "3016025b2911c987b9deb466fdbe7104044f0d69990cff8535e960ed712fab80"
+    },
+    {
+      "file": "pc/viewer.mjs",
+      "sha256": "7bdb472aee929eda4fe9b18a23b84dd5e1e609fd2f036db208caf149a008b0fd"
+    },
+    {
+      "file": "pc/viewer.test.mjs",
+      "sha256": "970ba4ca10a218c2b0a66c5f262e232e43840f785771b75d7225eb725112eca2"
+    },
+    {
+      "file": "pc/wireless-experiments.mjs",
+      "sha256": "883aedcbec020955ab2e6b544f413485c371f9a80e716f0e2135de5be9c14975"
+    },
+    {
+      "file": "pc/wireless-experiments.test.mjs",
+      "sha256": "2d15b51af7d0ca99f365e2569964af5e7f5ba11c01028aebb7294f921143383a"
+    },
+    {
+      "file": "pc/wireless-observer.mjs",
+      "sha256": "dd331f98d052bdd5900018bd646e8fd71f966e33c4f8e5bf69c8618f51cc2b81"
+    },
+    {
+      "file": "pc/wireless-observer.test.mjs",
+      "sha256": "a363626e139e3c1bb221d49cb691a6d417f8a8e399d86cf7728cd33d4f943111"
+    },
+    {
+      "file": "pnpm-lock.yaml",
+      "sha256": "ac1971a77e19b7d3f374b812acfc12e28540cfd72ed37c78ebe6701740fe9556"
+    },
+    {
+      "file": "scripts/allow-lan-firewall.ps1",
+      "sha256": "d1e1ab7374ee49708fa0e38095a02d4a325b0a9a00646896e34a4c0fccecfd98"
+    },
+    {
+      "file": "scripts/annotate.ps1",
+      "sha256": "916513e26c6d901bb21e30bdfa217d6beb6e90d371d85acc9d5e6b482f3f72c5"
+    },
+    {
+      "file": "scripts/build-lan-probe.ps1",
+      "sha256": "4bc81337f8b83297eb6ada040bb412dbe69867c023de3279b9697925856a1a7c"
+    },
+    {
+      "file": "scripts/build.ps1",
+      "sha256": "9ef642efe89c6381dbe7c9cbf65dd261043483deca36d1a0310985b8d269f8f9"
+    },
+    {
+      "file": "scripts/dialog-mode.ps1",
+      "sha256": "798a1dbbe6a548f59994ac4af07aacf455a5121620ed22869eaf9400913fe692"
+    },
+    {
+      "file": "scripts/dialog-mode.test.ps1",
+      "sha256": "42ba972f4356ce308b159840319dda96c1a59ee943f2b329373355631723c82a"
+    },
+    {
+      "file": "scripts/dialog-settings.ps1",
+      "sha256": "dc961117f9d28c96666174b653d52d66dd052740bfdba9b469f760f16ba25088"
+    },
+    {
+      "file": "scripts/dialog-settings.test.ps1",
+      "sha256": "855b1c27ee990749e3fc40f3126780e37063bed1a615ca20626ad48963f9e0de"
+    },
+    {
+      "file": "scripts/env.ps1",
+      "sha256": "68517afa0d9a9ab707f1bd467d05460a6066bc3bf570ceb59e83274b844f2448"
+    },
+    {
+      "file": "scripts/export-public.mjs",
+      "sha256": "75b7006bd0da5fee87ec594d969176be6f0f3cfbbfc4bb17a9a44d3232d71489"
+    },
+    {
+      "file": "scripts/forget-pin.ps1",
+      "sha256": "76cfbf97ebe903365dd393f4614eb1791b825bf747ea59d593bc95b089580e08"
+    },
+    {
+      "file": "scripts/install-toolchain.ps1",
+      "sha256": "060e1b1144b7093a534827feddf7734eabc81a5e190c0151cda88e5f9727a8b6"
+    },
+    {
+      "file": "scripts/install-web-deps.ps1",
+      "sha256": "03b333a2fb7e36819b42387f77faca34fef050de07985a9fade9af95a74ed21c"
+    },
+    {
+      "file": "scripts/pin-store.ps1",
+      "sha256": "4a4e2e255e472aab3eab628318df0310248dd1afcc4cacf4c6f0c36b54009c8f"
+    },
+    {
+      "file": "scripts/pin-store.test.ps1",
+      "sha256": "74e464852b71674870c25a97639ac8d8cb6579cd0567427caccdef5e472e48ae"
+    },
+    {
+      "file": "scripts/prepare-lan.ps1",
+      "sha256": "95438d080d90f13e8aa5e9c110a7c9af2184da324a613979c4c44007f740dfe7"
+    },
+    {
+      "file": "scripts/probe-adb-parser.ps1",
+      "sha256": "f8cb86be9ddb7ad1ae2432aed41de7c3b49d97f82b41550969ce81ff8d61d7ec"
+    },
+    {
+      "file": "scripts/quest-pin-vault.cs",
+      "sha256": "366aa4b313d54a44e8dcfd1e946e661d6eed00e824b9fab1e7c43ac97f61619a"
+    },
+    {
+      "file": "scripts/resolve-node.ps1",
+      "sha256": "cc160d3a288cad80caf2b609139851fa29cd617e5f2973d31283fb89226c2e84"
+    },
+    {
+      "file": "scripts/restore-dialogs.ps1",
+      "sha256": "a10d217c6571ecd0e411feec19a3ebdd277e5937cbc5cd365cf69b0c54e4cd5b"
+    },
+    {
+      "file": "scripts/snapshot-wireless.ps1",
+      "sha256": "a0bc116b44e38d53f70333ed85d4e0472513434f016cbbf545b374eac2721937"
+    },
+    {
+      "file": "scripts/start-lan.ps1",
+      "sha256": "0eb854c12fae3d638da9d8cbe0c018d27d7e7d6c02685882082f4b4074db41f9"
+    },
+    {
+      "file": "scripts/start-ui.ps1",
+      "sha256": "855b330ce7fe0c3db90ae19958be48af1fe8bfbefd5d6ccebe2ef2b894e74875"
+    },
+    {
+      "file": "scripts/start.ps1",
+      "sha256": "4c36263954488692f05f7cb729d92560cb4ca9cce9cdb68d61bfe6b12937bafe"
+    },
+    {
+      "file": "scripts/stop.ps1",
+      "sha256": "c5b356444b03c9a97bf6cb5ceebd9d04883da72d6d50e3be0b3c0c564dbc301a"
+    },
+    {
+      "file": "scripts/test-dialogs.ps1",
+      "sha256": "cb9777d2c6f9bed27ab19f6d5d9f0d327927297dc35625575965350756a662dc"
+    },
+    {
+      "file": "scripts/test-proximity-lease.ps1",
+      "sha256": "4d392e96e30b9dc03612532189105fc283915b5c8761485345189d4c359115f6"
+    },
+    {
+      "file": "third_party/README.md",
+      "sha256": "ccee8618af219e00365cce3f44ade35fcf406128b689627cb3a5d11804458eee"
+    },
+    {
+      "file": "third_party/licenses/Android-NDK-NOTICE-toolchain.txt",
+      "sha256": "cbe3237be53c0a819f8df6aac5358fdee848eee3b6571b4e2ca20767ebd7465e"
+    },
+    {
+      "file": "third_party/licenses/Android-NDK-NOTICE.txt",
+      "sha256": "4d5224d1c0b54ffa88b0dc0088191638fdbb7227835095dfb98f7f66b416a323"
+    },
+    {
+      "file": "third_party/licenses/OpenXR-LICENSE.txt",
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+    },
+    {
+      "file": "third_party/licenses/threejs-MIT.txt",
+      "sha256": "8b378ebe60e2fe500158cb0ac71cb5e8b7d92953c2abcc63a0eb90499653b5bc"
+    },
+    {
+      "file": "web/annotate.html",
+      "sha256": "5e3900128a1203f7058f1db2380fd931d3934d54ae97eab6169764eaee1e1e08"
+    },
+    {
+      "file": "web/annotation-state.js",
+      "sha256": "2a40ea37016f31309a474f699ca625c9638621b57a66650e524310e9f79bb307"
+    },
+    {
+      "file": "web/annotation.css",
+      "sha256": "eb01ab446fb719e69ebdf8fa7dc8c92d4de940a4a94233f58b669a63ac0b4d70"
+    },
+    {
+      "file": "web/annotation.js",
+      "sha256": "ace28a4499dfe3fd486127cedb03761a9287d60ad2f2bdfa8d4de84bd15ea090"
+    },
+    {
+      "file": "web/app.js",
+      "sha256": "ab5c21efb971a9a9d9440aadf918ba74403b688843e76a2794f3b5ea9ad6938e"
+    },
+    {
+      "file": "web/index.html",
+      "sha256": "0f942640a05753ef9067c9fe592709c14c7a9f2a4680c54d8ddf541f2c68eb2b"
+    },
+    {
+      "file": "web/scene.js",
+      "sha256": "b16f5d750c57dcbe51879782531557fa6ddef2c3ee8c9d41d46536709d675f02"
+    },
+    {
+      "file": "web/state.js",
+      "sha256": "41b15a3f4a9ba3f4b1da58ce1ea17af5fa59cebe63157f3202b1af864219f5ac"
+    },
+    {
+      "file": "web/style.css",
+      "sha256": "e9db5647ad5e01885b360efa260b7c7850f7e22c33062156aefe5f02e2ad1c08"
+    }
+  ]
+}

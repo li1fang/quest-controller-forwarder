@@ -1,0 +1,24 @@
+{
+  "name": "quest-usb-forwarder",
+  "version": "0.7.0",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "description": "Quest OpenXR controller telemetry over USB or paired LAN TLS, with durable annotation sessions",
+  "scripts": {
+    "start": "node pc/start.mjs",
+    "monitor": "node pc/start.mjs",
+    "usb": "node pc/usb.mjs",
+    "view": "node pc/viewer.mjs",
+    "receive": "node pc/receiver.mjs",
+    "lan": "node pc/start-lan.mjs",
+    "annotate": "node pc/annotation-server.mjs",
+    "test": "node --test pc/*.test.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "three": "0.186.1"
+  }
+}
